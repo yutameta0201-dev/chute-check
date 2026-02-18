@@ -2,8 +2,9 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>シュート番号 自動照合</title>
-<script src="https://unpkg.com/html5-qrcode"></script>
+<title>シュート番号 OCR照合</title>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <style>
 body {
@@ -11,14 +12,22 @@ body {
     text-align: center;
     margin-top: 20px;
 }
-#reader {
+video {
     width: 300px;
-    margin: auto;
+    border: 2px solid black;
+}
+canvas {
+    display: none;
+}
+button {
+    font-size: 20px;
+    padding: 10px;
+    margin-top: 10px;
 }
 input {
     font-size: 24px;
     padding: 8px;
-    width: 180px;
+    width: 150px;
     text-align: center;
     margin-top: 10px;
 }
@@ -32,53 +41,82 @@ input {
 
 <body>
 
-<h2>シュート番号 自動照合（オンライン）</h2>
+<h2>シュート番号 OCR照合</h2>
 
-<p>① シュート番号をカメラで読み取る</p>
-<div id="reader"></div>
+<video id="video" autoplay playsinline></video>
+<br>
+<button onclick="capture()">📷 読み取り</button>
 
-<p>② ラベル番号を入力</p>
-<input id="label" type="number" placeholder="ラベル番号">
+<p>ラベル番号入力</p>
+<input id="label" type="text" placeholder="ラベル番号">
 
 <div id="result"></div>
 
+<canvas id="canvas"></canvas>
+
 <script>
 
-let scannedCode = "";
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+let scannedText = "";
+
+// 外カメラ起動
+navigator.mediaDevices.getUserMedia({
+    video: { facingMode: "environment" }
+})
+.then(stream => {
+    video.srcObject = stream;
+})
+.catch(err => {
+    alert("カメラ起動失敗");
+});
 
 // エラー音
 function playErrorSound() {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
-
     oscillator.connect(gainNode);
     gainNode.connect(audioCtx.destination);
-
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(500, audioCtx.currentTime);
-    gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-
+    oscillator.frequency.value = 500;
     oscillator.start();
     oscillator.stop(audioCtx.currentTime + 0.3);
 }
 
-// QR読み取り成功時
-function onScanSuccess(decodedText) {
-    scannedCode = decodedText.trim();
-    document.getElementById("result").innerHTML = "読取: " + scannedCode;
-    document.getElementById("result").style.color = "black";
-    checkMatch();
+// 画像キャプチャしてOCR
+function capture() {
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+
+    document.getElementById("result").innerHTML = "読み取り中...";
+
+    Tesseract.recognize(
+        canvas,
+        'eng',
+        {
+            tessedit_char_whitelist: '0123456789'
+        }
+    ).then(({ data: { text } }) => {
+
+        scannedText = text.replace(/\D/g, "");
+        document.getElementById("result").innerHTML = "読取: " + scannedText;
+        document.getElementById("result").style.color = "black";
+        checkMatch();
+
+    });
 }
 
-// 照合チェック
+// 照合
 function checkMatch() {
     const label = document.getElementById("label").value.trim();
     const result = document.getElementById("result");
 
-    if (!scannedCode || !label) return;
+    if (!scannedText || !label) return;
 
-    if (scannedCode === label) {
+    if (scannedText === label) {
         result.innerHTML = "✅ 一致しました";
         result.style.color = "green";
     } else {
@@ -88,28 +126,13 @@ function checkMatch() {
     }
 }
 
-// 入力時に照合
 document.getElementById("label").addEventListener("input", checkMatch);
-
-// カメラ起動
-const html5QrCode = new Html5Qrcode("reader");
-
-html5QrCode.start(
-    { facingMode: "environment" }, // ← 背面カメラ指定
-    {
-        fps: 10,
-        qrbox: 250
-    },
-    onScanSuccess
-).catch(err => {
-    console.error("カメラ起動エラー:", err);
-});
-
 
 </script>
 
 </body>
 </html>
+
 
 
 
