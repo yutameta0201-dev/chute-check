@@ -2,15 +2,34 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>シュート番号自動照合</title>
+<title>シュート番号 自動照合</title>
 <script src="https://unpkg.com/html5-qrcode"></script>
+
 <style>
-body { font-family: Arial; text-align:center; margin-top:20px; }
-#reader { width:300px; margin:auto; }
-input { font-size:24px; padding:8px; width:160px; text-align:center; margin-top:10px; }
-#result { font-size:28px; margin-top:20px; font-weight:bold; }
+body {
+    font-family: Arial;
+    text-align: center;
+    margin-top: 20px;
+}
+#reader {
+    width: 300px;
+    margin: auto;
+}
+input {
+    font-size: 24px;
+    padding: 8px;
+    width: 180px;
+    text-align: center;
+    margin-top: 10px;
+}
+#result {
+    font-size: 28px;
+    margin-top: 20px;
+    font-weight: bold;
+}
 </style>
 </head>
+
 <body>
 
 <h2>シュート番号 自動照合（オンライン）</h2>
@@ -24,52 +43,71 @@ input { font-size:24px; padding:8px; width:160px; text-align:center; margin-top:
 <div id="result"></div>
 
 <script>
+
 let scannedCode = "";
 
-// カメラでシュート番号読み取り
+// エラー音
+function playErrorSound() {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(500, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.3);
+}
+
+// QR読み取り成功時
 function onScanSuccess(decodedText) {
     scannedCode = decodedText.trim();
     document.getElementById("result").innerHTML = "読取: " + scannedCode;
+    document.getElementById("result").style.color = "black";
+    checkMatch();
 }
 
-// HTML5 QRコードライブラリを利用（数字OCRとして利用）
-let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-html5QrcodeScanner.render(onScanSuccess);
-
-// 自動照合関数
-document.getElementById("label").addEventListener("input", function() {
-    let label = document.getElementById("label").value.trim();
-    let result = document.getElementById("result");
+// 照合チェック
+function checkMatch() {
+    const label = document.getElementById("label").value.trim();
+    const result = document.getElementById("result");
 
     if (!scannedCode || !label) return;
 
     if (scannedCode === label) {
-        result.innerHTML = "OK ✅";
+        result.innerHTML = "✅ 一致しました";
         result.style.color = "green";
-        beep(900,150);
     } else {
-        result.innerHTML = "NG ❌ 不一致";
+        result.innerHTML = "❌ 不一致です";
         result.style.color = "red";
-        beep(200,500);
+        playErrorSound();
     }
+}
 
-    // 次の読み取りの準備
-    scannedCode = "";
-    document.getElementById("label").value = "";
+// 入力時に照合
+document.getElementById("label").addEventListener("input", checkMatch);
+
+// カメラ起動
+const html5QrCode = new Html5Qrcode("reader");
+Html5Qrcode.getCameras().then(devices => {
+    if (devices && devices.length) {
+        html5QrCode.start(
+            devices[0].id,
+            { fps: 10, qrbox: 250 },
+            onScanSuccess
+        );
+    }
+}).catch(err => {
+    console.error(err);
 });
 
-function beep(freq,duration){
-  try{
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var osc = ctx.createOscillator();
-    osc.type = "sine";
-    osc.frequency.value = freq;
-    osc.connect(ctx.destination);
-    osc.start();
-    setTimeout(function(){osc.stop();},duration);
-  }catch(e){}
-}
 </script>
 
 </body>
 </html>
+
+
