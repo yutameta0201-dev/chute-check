@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>シュート番号自動照合</title>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<style>
+body { font-family: Arial; text-align:center; margin-top:20px; }
+#reader { width:300px; margin:auto; }
+input { font-size:24px; padding:8px; width:160px; text-align:center; margin-top:10px; }
+#result { font-size:28px; margin-top:20px; font-weight:bold; }
+</style>
+</head>
+<body>
+
+<h2>シュート番号 自動照合（オンライン）</h2>
+
+<p>① シュート番号をカメラで読み取る</p>
+<div id="reader"></div>
+
+<p>② ラベル番号を入力</p>
+<input id="label" type="number" placeholder="ラベル番号">
+
+<div id="result"></div>
+
+<script>
+let scannedCode = "";
+
+// カメラでシュート番号読み取り
+function onScanSuccess(decodedText) {
+    scannedCode = decodedText.trim();
+    document.getElementById("result").innerHTML = "読取: " + scannedCode;
+}
+
+// HTML5 QRコードライブラリを利用（数字OCRとして利用）
+let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+html5QrcodeScanner.render(onScanSuccess);
+
+// 自動照合関数
+document.getElementById("label").addEventListener("input", function() {
+    let label = document.getElementById("label").value.trim();
+    let result = document.getElementById("result");
+
+    if (!scannedCode || !label) return;
+
+    if (scannedCode === label) {
+        result.innerHTML = "OK ✅";
+        result.style.color = "green";
+        beep(900,150);
+    } else {
+        result.innerHTML = "NG ❌ 不一致";
+        result.style.color = "red";
+        beep(200,500);
+    }
+
+    // 次の読み取りの準備
+    scannedCode = "";
+    document.getElementById("label").value = "";
+});
+
+function beep(freq,duration){
+  try{
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    osc.connect(ctx.destination);
+    osc.start();
+    setTimeout(function(){osc.stop();},duration);
+  }catch(e){}
+}
+</script>
+
+</body>
+</html>
