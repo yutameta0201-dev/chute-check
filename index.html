@@ -2,79 +2,89 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>シュート照合</title>
-
+<title>Chute Label Check OCR</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script>
 <style>
-body {
-    font-family: Arial;
-    text-align: center;
-    margin-top: 40px;
-}
-input {
-    font-size: 26px;
-    padding: 10px;
-    width: 200px;
-    text-align: center;
-    margin: 15px;
-}
-#result {
-    font-size: 32px;
-    margin-top: 30px;
-    font-weight: bold;
-}
-button {
-    font-size: 18px;
-    padding: 8px 15px;
-}
+body { font-family: sans-serif; text-align: center; }
+video { width: 90%; max-width: 400px; border: 2px solid black; }
+input { font-size: 20px; padding: 5px; margin: 5px; }
+button { font-size: 18px; padding: 8px 15px; margin: 5px; }
+#result { font-size: 28px; font-weight: bold; margin-top: 10px; }
+.red { color: red; }
+.green { color: green; }
 </style>
 </head>
-
 <body>
 
-<h2>シュート番号 照合</h2>
+<h2>Chute → Label OCR Check</h2>
 
-<p>① シュート番号入力</p>
-<input id="chute" type="text" placeholder="シュート番号">
+<input type="text" id="chute" placeholder="シュート番号入力"><br>
 
-<p>② ラベル番号（Googleレンズで読取）</p>
-<input id="label" type="text" placeholder="ラベル番号">
+<video id="video" autoplay playsinline></video><br>
+<button onclick="startCamera()">カメラ開始</button>
+<button onclick="capture()">読み取り</button>
 
-<br>
-<button onclick="checkMatch()">照合</button>
+<p id="result"></p>
 
-<div id="result"></div>
+<audio id="okSound">
+<source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg">
+</audio>
+<audio id="ngSound">
+<source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg">
+</audio>
 
 <script>
+let video = document.getElementById("video");
 
-function playErrorSound() {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    oscillator.frequency.value = 500;
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.3);
+function startCamera() {
+    navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: "environment" } }
+    }).then(stream => {
+        video.srcObject = stream;
+    }).catch(err => {
+        alert("外カメラ取得できません。通常カメラに切替ます。");
+        navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => video.srcObject = stream);
+    });
 }
 
-function checkMatch() {
-    const chute = document.getElementById("chute").value.trim();
-    const label = document.getElementById("label").value.trim();
-    const result = document.getElementById("result");
+function capture() {
+    let canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    let ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0);
 
-    if (!chute || !label) return;
+    Tesseract.recognize(
+        canvas,
+        'eng',
+        { tessedit_char_whitelist: '0123456789' }
+    ).then(({ data: { text } }) => {
 
-    if (chute === label) {
-        result.innerHTML = "✅ 一致しました";
-        result.style.color = "green";
-    } else {
-        result.innerHTML = "❌ 不一致です";
-        result.style.color = "red";
-        playErrorSound();
-    }
+        let labelNumber = text.replace(/[^0-9]/g, "").trim();
+        let chuteNumber = document.getElementById("chute").value.trim();
+        let result = document.getElementById("result");
+
+        if (!labelNumber) {
+            result.innerHTML = "数字が読めません";
+            result.className = "red";
+            document.getElementById("ngSound").play();
+            return;
+        }
+
+        if (labelNumber === chuteNumber) {
+            result.innerHTML = "OK ✔ " + labelNumber;
+            result.className = "green";
+            document.getElementById("okSound").play();
+        } else {
+            result.innerHTML = "NG ✖ " + labelNumber;
+            result.className = "red";
+            document.getElementById("ngSound").play();
+        }
+    });
 }
-
 </script>
 
 </body>
 </html>
+
