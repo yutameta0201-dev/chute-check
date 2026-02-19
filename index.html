@@ -2,77 +2,50 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>シュート番号 OCR照合</title>
-
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<title>シュート照合</title>
 
 <style>
 body {
     font-family: Arial;
     text-align: center;
-    margin-top: 20px;
-}
-video {
-    width: 300px;
-    border: 2px solid black;
-}
-canvas {
-    display: none;
-}
-button {
-    font-size: 20px;
-    padding: 10px;
-    margin-top: 10px;
+    margin-top: 40px;
 }
 input {
-    font-size: 24px;
-    padding: 8px;
-    width: 150px;
+    font-size: 26px;
+    padding: 10px;
+    width: 200px;
     text-align: center;
-    margin-top: 10px;
+    margin: 15px;
 }
 #result {
-    font-size: 28px;
-    margin-top: 20px;
+    font-size: 32px;
+    margin-top: 30px;
     font-weight: bold;
+}
+button {
+    font-size: 18px;
+    padding: 8px 15px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>シュート番号 OCR照合</h2>
+<h2>シュート番号 照合</h2>
 
-<video id="video" autoplay playsinline></video>
-<br>
-<button onclick="capture()">📷 読み取り</button>
+<p>① シュート番号入力</p>
+<input id="chute" type="text" placeholder="シュート番号">
 
-<p>ラベル番号入力</p>
+<p>② ラベル番号（Googleレンズで読取）</p>
 <input id="label" type="text" placeholder="ラベル番号">
+
+<br>
+<button onclick="checkMatch()">照合</button>
 
 <div id="result"></div>
 
-<canvas id="canvas"></canvas>
-
 <script>
 
-const video = document.getElementById("video");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-let scannedText = "";
-
-// 外カメラ起動
-navigator.mediaDevices.getUserMedia({
-    video: { facingMode: "environment" }
-})
-.then(stream => {
-    video.srcObject = stream;
-})
-.catch(err => {
-    alert("カメラ起動失敗");
-});
-
-// エラー音
 function playErrorSound() {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioCtx.createOscillator();
@@ -84,39 +57,14 @@ function playErrorSound() {
     oscillator.stop(audioCtx.currentTime + 0.3);
 }
 
-// 画像キャプチャしてOCR
-function capture() {
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0);
-
-    document.getElementById("result").innerHTML = "読み取り中...";
-
-    Tesseract.recognize(
-        canvas,
-        'eng',
-        {
-            tessedit_char_whitelist: '0123456789'
-        }
-    ).then(({ data: { text } }) => {
-
-        scannedText = text.replace(/\D/g, "");
-        document.getElementById("result").innerHTML = "読取: " + scannedText;
-        document.getElementById("result").style.color = "black";
-        checkMatch();
-
-    });
-}
-
-// 照合
 function checkMatch() {
+    const chute = document.getElementById("chute").value.trim();
     const label = document.getElementById("label").value.trim();
     const result = document.getElementById("result");
 
-    if (!scannedText || !label) return;
+    if (!chute || !label) return;
 
-    if (scannedText === label) {
+    if (chute === label) {
         result.innerHTML = "✅ 一致しました";
         result.style.color = "green";
     } else {
@@ -126,13 +74,7 @@ function checkMatch() {
     }
 }
 
-document.getElementById("label").addEventListener("input", checkMatch);
-
 </script>
 
 </body>
 </html>
-
-
-
-
