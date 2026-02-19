@@ -7,6 +7,18 @@
 <style>
 body { font-family: sans-serif; text-align: center; }
 video { width: 90%; max-width: 400px; border: 2px solid black; }
+#overlay {
+    position: absolute;
+    border: 3px solid red;
+    width: 60%;
+    height: 30%;
+    top: 35%;
+    left: 20%;
+}
+.container {
+    position: relative;
+    display: inline-block;
+}
 input { font-size: 20px; padding: 5px; margin: 5px; }
 button { font-size: 18px; padding: 8px 15px; margin: 5px; }
 #result { font-size: 28px; font-weight: bold; margin-top: 10px; }
@@ -20,7 +32,11 @@ button { font-size: 18px; padding: 8px 15px; margin: 5px; }
 
 <input type="text" id="chute" placeholder="シュート番号入力"><br>
 
-<video id="video" autoplay playsinline></video><br>
+<div class="container">
+    <video id="video" autoplay playsinline></video>
+    <div id="overlay"></div>
+</div><br>
+
 <button onclick="startCamera()">カメラ開始</button>
 <button onclick="capture()">読み取り</button>
 
@@ -41,8 +57,7 @@ function startCamera() {
         video: { facingMode: { exact: "environment" } }
     }).then(stream => {
         video.srcObject = stream;
-    }).catch(err => {
-        alert("外カメラ取得できません。通常カメラに切替ます。");
+    }).catch(() => {
         navigator.mediaDevices.getUserMedia({ video: true })
         .then(stream => video.srcObject = stream);
     });
@@ -55,8 +70,20 @@ function capture() {
     let ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0);
 
+    // 中央60%×30%を切り取り
+    let cropX = canvas.width * 0.2;
+    let cropY = canvas.height * 0.35;
+    let cropWidth = canvas.width * 0.6;
+    let cropHeight = canvas.height * 0.3;
+
+    let cropped = document.createElement("canvas");
+    cropped.width = cropWidth;
+    cropped.height = cropHeight;
+    let croppedCtx = cropped.getContext("2d");
+    croppedCtx.drawImage(canvas, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
     Tesseract.recognize(
-        canvas,
+        cropped,
         'eng',
         { tessedit_char_whitelist: '0123456789' }
     ).then(({ data: { text } }) => {
@@ -87,4 +114,5 @@ function capture() {
 
 </body>
 </html>
+
 
