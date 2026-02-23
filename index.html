@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Chute Label Auto OCR</title>
+<title>Chute Label AUTO OCR</title>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script>
 
 <style>
@@ -36,6 +36,12 @@ video {
 input {
     font-size: 20px;
     padding: 5px;
+    margin: 5px;
+}
+
+button {
+    font-size: 18px;
+    padding: 8px 15px;
     margin: 5px;
 }
 
@@ -73,7 +79,10 @@ input {
 <div class="container">
     <video id="video" autoplay playsinline></video>
     <div id="overlay"></div>
-</div>
+</div><br>
+
+<button onclick="startScan()">START</button>
+<button onclick="pauseScan()">PAUSE</button>
 
 <p id="result"></p>
 
@@ -87,33 +96,38 @@ input {
 <script>
 let video = document.getElementById("video");
 let isProcessing = false;
+let isScanning = false;
 let lastRead = "";
+let scanInterval;
 
-function startCamera() {
-    navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { exact: "environment" } }
-    }).then(stream => {
-        video.srcObject = stream;
-        startAutoScan();
-    }).catch(() => {
-        navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-            video.srcObject = stream;
-            startAutoScan();
-        });
-    });
-}
+navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { exact: "environment" } }
+}).then(stream => {
+    video.srcObject = stream;
+}).catch(() => {
+    navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => video.srcObject = stream);
+});
 
-function startAutoScan() {
-    setInterval(() => {
+function startScan() {
+    if (isScanning) return;
+    isScanning = true;
+
+    scanInterval = setInterval(() => {
         if (!isProcessing) {
             capture();
         }
-    }, 1000); // 1秒ごとにチェック
+    }, 1000);
+}
+
+function pauseScan() {
+    isScanning = false;
+    clearInterval(scanInterval);
 }
 
 function capture() {
 
+    if (!isScanning) return;
     if (!document.getElementById("chute").value.trim()) return;
 
     isProcessing = true;
@@ -181,14 +195,9 @@ function capture() {
         setTimeout(() => {
             isProcessing = false;
         }, 800);
-
     });
 }
-
-startCamera();
 </script>
 
 </body>
 </html>
-
-
