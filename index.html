@@ -4,28 +4,72 @@
 <meta charset="UTF-8">
 <title>Chute Label Check OCR</title>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script>
+
 <style>
-body { font-family: sans-serif; text-align: center; }
-video { width: 90%; max-width: 400px; border: 2px solid black; }
-#overlay {
-    position: absolute;
-    border: 3px solid red;
-    width: 60%;
-    height: 30%;
-    top: 35%;
-    left: 20%;
+body {
+    font-family: sans-serif;
+    text-align: center;
+    margin: 0;
+    background-color: white;
 }
+
+video {
+    width: 90%;
+    max-width: 400px;
+    border: 2px solid black;
+}
+
 .container {
     position: relative;
     display: inline-block;
 }
-input { font-size: 20px; padding: 5px; margin: 5px; }
-button { font-size: 18px; padding: 8px 15px; margin: 5px; }
-#result { font-size: 28px; font-weight: bold; margin-top: 10px; }
+
+#overlay {
+    position: absolute;
+    border: 3px solid red;
+    width: 40%;
+    height: 20%;
+    top: 40%;
+    left: 30%;
+}
+
+input {
+    font-size: 20px;
+    padding: 5px;
+    margin: 5px;
+}
+
+button {
+    font-size: 18px;
+    padding: 8px 15px;
+    margin: 5px;
+}
+
+#result {
+    font-size: 28px;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
 .red { color: red; }
 .green { color: green; }
+
+/* 🔴 2回赤点滅 */
+.flash-red {
+    animation: flashRed 0.8s;
+}
+
+@keyframes flashRed {
+    0%   { background-color: white; }
+    20%  { background-color: red; }
+    40%  { background-color: white; }
+    60%  { background-color: red; }
+    80%  { background-color: white; }
+    100% { background-color: white; }
+}
 </style>
 </head>
+
 <body>
 
 <h2>Chute → Label OCR Check</h2>
@@ -64,23 +108,28 @@ function startCamera() {
 }
 
 function capture() {
+
     let canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     let ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0);
 
-    // 中央60%×30%を切り取り
-    let cropX = canvas.width * 0.2;
-    let cropY = canvas.height * 0.35;
-    let cropWidth = canvas.width * 0.6;
-    let cropHeight = canvas.height * 0.3;
+    // 🔍 中央40%×20%切り取り
+    let cropX = canvas.width * 0.3;
+    let cropY = canvas.height * 0.4;
+    let cropWidth = canvas.width * 0.4;
+    let cropHeight = canvas.height * 0.2;
 
     let cropped = document.createElement("canvas");
     cropped.width = cropWidth;
     cropped.height = cropHeight;
     let croppedCtx = cropped.getContext("2d");
-    croppedCtx.drawImage(canvas, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+    croppedCtx.drawImage(
+        canvas,
+        cropX, cropY, cropWidth, cropHeight,
+        0, 0, cropWidth, cropHeight
+    );
 
     Tesseract.recognize(
         cropped,
@@ -107,6 +156,17 @@ function capture() {
             result.innerHTML = "NG ✖ " + labelNumber;
             result.className = "red";
             document.getElementById("ngSound").play();
+
+            // 🔴 2回フラッシュ
+            document.body.classList.add("flash-red");
+            setTimeout(() => {
+                document.body.classList.remove("flash-red");
+            }, 800);
+
+            // 📳 振動（対応端末のみ）
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 100, 200]);
+            }
         }
     });
 }
@@ -114,5 +174,3 @@ function capture() {
 
 </body>
 </html>
-
-
