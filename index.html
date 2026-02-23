@@ -1,156 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>順番チェックOCR 安定版</title>
+
+<!-- Tesseract 安定CDN -->
+<script src="https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+
+<style>
+body{
+    margin:0;
+    background:black;
+    color:white;
+    text-align:center;
+    font-family:sans-serif;
+}
+
+video{
+    width:100%;
+    max-width:400px;
+    margin-top:10px;
+}
+
+#overlay{
+    position:absolute;
+    border:3px solid lime;
+    width:130px;      /* ← 小さめ枠 */
+    height:55px;
+    top:40%;
+    left:50%;
+    transform:translate(-50%,-50%);
+}
+
+.flash{
+    animation: flashRed 0.25s;
+}
+
+@keyframes flashRed{
+    0%{background:red;}
+    100%{background:black;}
+}
+
+button,input{
+    font-size:18px;
+    margin:5px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>順番チェックOCR</h2>
+
+開始番号:
+<input type="number" id="startNum" placeholder="例: 019">
+<button onclick="setStart()">設定</button>
+<br>
+<button onclick="startScan()">スタート</button>
+<button onclick="stopScan()">一時停止</button>
+
+<div style="position:relative;">
+<video id="video" autoplay playsinline></video>
+<div id="overlay"></div>
+</div>
+
+<h1 id="status">待機中</h1>
+
 <script>
-let video = document.getElementById("video");
-let isProcessing = false;
-let isScanning = false;
-let scanInterval;
-let currentNumber = null;
-let digitLength = 0;
-let femaleVoice = null;
+let currentNumber = 0;
+let scanning = false;
+let processing = false;
 
-// 🔊 音声エンジン初期化（超重要）
-function initSpeech() {
-    speechSynthesis.cancel();
-    let utter = new SpeechSynthesisUtterance("");
-    speechSynthesis.speak(utter);
+const video = document.getElementById("video");
+const status = document.getElementById("status");
+
+async function initCamera(){
+    try{
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video:{
+                facingMode:"environment",
+                width:{ideal:640},
+                height:{ideal:480}
+            }
+        });
+        video.srcObject = stream;
+        await video.play();
+    }catch(err){
+        alert("カメラエラー: "+err);
+    }
 }
 
-// 女性音声取得
-function loadVoices() {
-    let voices = speechSynthesis.getVoices();
-    femaleVoice =
-        voices.find(v => v.lang === "ja-JP" && v.name.includes("Kyoko")) ||
-        voices.find(v => v.lang === "ja-JP") ||
-        voices[0];
+initCamera();
+
+function setStart(){
+    const val = document.getElementById("startNum").value;
+    if(val===""){
+        alert("開始番号を入力してください");
+        return;
+    }
+    currentNumber = parseInt(val);
+    status.innerText = "次は "+formatNumber(currentNumber);
 }
 
-// iPhone対策（音声ロード待ち）
-speechSynthesis.onvoiceschanged = loadVoices;
-
-// 音声読み上げ
-function speakError(message) {
-    if (!femaleVoice) loadVoices();
-
-    const utter = new SpeechSynthesisUtterance(message);
-    utter.lang = "ja-JP";
-    utter.rate = 1;
-    utter.pitch = 1.2;
-
-    if (femaleVoice) utter.voice = femaleVoice;
-
-    speechSynthesis.cancel();
-    speechSynthesis.speak(utter);
+function startScan(){
+    if(currentNumber===0){
+        alert("開始番号を設定してください");
+        return;
+    }
+    scanning = true;
+    scanLoop();
 }
 
-// カメラ起動
-navigator.mediaDevices.getUserMedia({
-    video: { facingMode: { exact: "environment" } }
-}).then(stream => {
-    video.srcObject = stream;
-}).catch(() => {
-    navigator.mediaDevices.getUserMedia({ video: true })
-    .then(stream => video.srcObject = stream);
-});
-
-function startScan() {
-
-    initSpeech(); // ← ここが重要
-
-    let input = document.getElementById("startNumber").value.trim();
-    if (!input) return alert("開始番号を入力してください");
-
-    digitLength = input.length;
-    currentNumber = parseInt(input, 10);
-
-    isScanning = true;
-
-    scanInterval = setInterval(() => {
-        if (!isProcessing) capture();
-    }, 1000);
+function stopScan(){
+    scanning = false;
+    status.innerText="停止中";
 }
 
-function pauseScan() {
-    isScanning = false;
-    clearInterval(scanInterval);
-}
+async function scanLoop(){
+    if(!scanning || processing) return;
 
-function padNumber(num) {
-    return num.toString().padStart(digitLength, "0");
-}
+    processing = true;
 
-function capture() {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
 
-    if (!isScanning) return;
-
-    isProcessing = true;
-
-    let canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    let ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0);
 
-    let cropX = canvas.width * 0.3;
-    let cropY = canvas.height * 0.4;
-    let cropWidth = canvas.width * 0.4;
-    let cropHeight = canvas.height * 0.2;
+    ctx.drawImage(video,0,0);
 
-    let cropped = document.createElement("canvas");
-    cropped.width = cropWidth;
-    cropped.height = cropHeight;
-    let croppedCtx = cropped.getContext("2d");
-    croppedCtx.drawImage(
-        canvas,
-        cropX, cropY, cropWidth, cropHeight,
-        0, 0, cropWidth, cropHeight
-    );
-
-    Tesseract.recognize(
-        cropped,
-        'eng',
-        {
-            tessedit_char_whitelist: '0123456789',
-            tessedit_pageseg_mode: 7
-        }
-    ).then(({ data: { text } }) => {
-
-        let readNumber = text.replace(/[^0-9]/g, "").trim();
-        let expected = padNumber(currentNumber);
-        let result = document.getElementById("result");
-
-        if (!readNumber) {
-            isProcessing = false;
-            return;
-        }
-
-        if (readNumber === expected) {
-
-            result.innerHTML = "OK ✔ " + readNumber;
-            result.className = "green";
-            document.getElementById("okSound").play();
-            currentNumber++;
-
-        } else {
-
-            result.innerHTML = "NG ✖ " + readNumber + " (次: " + expected + ")";
-            result.className = "red";
-            document.getElementById("ngSound").play();
-
-            document.body.classList.add("flash-red");
-            setTimeout(() => {
-                document.body.classList.remove("flash-red");
-            }, 800);
-
-            if (navigator.vibrate) {
-                navigator.vibrate([200,100,200]);
-            }
-
-            // 🔊 音声
-            speakError("ラベルが違います。次は " + expected + " です。");
-        }
-
-        setTimeout(() => {
-            isProcessing = false;
-        }, 800);
+    const result = await Tesseract.recognize(canvas,'eng',{
+        tessedit_char_whitelist:'0123456789'
     });
+
+    let text = result.data.text.replace(/\D/g,'');
+
+    if(text !== ""){
+        if(parseInt(text) === currentNumber){
+            status.innerText = "OK "+formatNumber(currentNumber);
+            navigator.vibrate([150]);
+            currentNumber++;
+        }else{
+            status.innerText = "NG "+text;
+            errorFlash();
+        }
+    }
+
+    processing = false;
+
+    setTimeout(scanLoop,1200);   // 負荷軽減
+}
+
+function errorFlash(){
+    navigator.vibrate([200,100,200]);
+
+    document.body.classList.add("flash");
+    setTimeout(()=>document.body.classList.remove("flash"),250);
+
+    setTimeout(()=>{
+        document.body.classList.add("flash");
+        setTimeout(()=>document.body.classList.remove("flash"),250);
+    },400);
+}
+
+function formatNumber(num){
+    return num.toString().padStart(3,'0');
 }
 </script>
+
+</body>
+</html>
+
