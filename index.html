@@ -1,99 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>連番 強制スキャンモード（音声付）</title>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script>
-
-<style>
-body {
-    font-family: sans-serif;
-    text-align: center;
-    margin: 0;
-    background-color: white;
-}
-
-video {
-    width: 90%;
-    max-width: 400px;
-    border: 2px solid black;
-}
-
-.container {
-    position: relative;
-    display: inline-block;
-}
-
-#overlay {
-    position: absolute;
-    border: 3px solid red;
-    width: 40%;
-    height: 20%;
-    top: 40%;
-    left: 30%;
-}
-
-input {
-    font-size: 22px;
-    padding: 5px;
-    margin: 5px;
-    text-align: center;
-}
-
-button {
-    font-size: 18px;
-    padding: 8px 15px;
-    margin: 5px;
-}
-
-#result {
-    font-size: 30px;
-    font-weight: bold;
-    margin-top: 10px;
-}
-
-.red { color: red; }
-.green { color: green; }
-
-/* 🔴 2回赤点滅 */
-.flash-red {
-    animation: flashRed 0.8s;
-}
-
-@keyframes flashRed {
-    0% { background-color: white; }
-    20% { background-color: red; }
-    40% { background-color: white; }
-    60% { background-color: red; }
-    80% { background-color: white; }
-    100% { background-color: white; }
-}
-</style>
-</head>
-
-<body>
-
-<h2>連番 強制スキャンモード（音声付）</h2>
-
-<input type="text" id="startNumber" placeholder="開始番号入力 (例:019)"><br>
-
-<div class="container">
-    <video id="video" autoplay playsinline></video>
-    <div id="overlay"></div>
-</div><br>
-
-<button onclick="startScan()">START</button>
-<button onclick="pauseScan()">PAUSE</button>
-
-<p id="result"></p>
-
-<audio id="okSound">
-<source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg">
-</audio>
-<audio id="ngSound">
-<source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg">
-</audio>
-
 <script>
 let video = document.getElementById("video");
 let isProcessing = false;
@@ -101,6 +5,41 @@ let isScanning = false;
 let scanInterval;
 let currentNumber = null;
 let digitLength = 0;
+let femaleVoice = null;
+
+// 🔊 音声エンジン初期化（超重要）
+function initSpeech() {
+    speechSynthesis.cancel();
+    let utter = new SpeechSynthesisUtterance("");
+    speechSynthesis.speak(utter);
+}
+
+// 女性音声取得
+function loadVoices() {
+    let voices = speechSynthesis.getVoices();
+    femaleVoice =
+        voices.find(v => v.lang === "ja-JP" && v.name.includes("Kyoko")) ||
+        voices.find(v => v.lang === "ja-JP") ||
+        voices[0];
+}
+
+// iPhone対策（音声ロード待ち）
+speechSynthesis.onvoiceschanged = loadVoices;
+
+// 音声読み上げ
+function speakError(message) {
+    if (!femaleVoice) loadVoices();
+
+    const utter = new SpeechSynthesisUtterance(message);
+    utter.lang = "ja-JP";
+    utter.rate = 1;
+    utter.pitch = 1.2;
+
+    if (femaleVoice) utter.voice = femaleVoice;
+
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utter);
+}
 
 // カメラ起動
 navigator.mediaDevices.getUserMedia({
@@ -112,29 +51,9 @@ navigator.mediaDevices.getUserMedia({
     .then(stream => video.srcObject = stream);
 });
 
-// 女性音声取得
-function getFemaleVoice() {
-    let voices = speechSynthesis.getVoices();
-    return voices.find(v => v.lang === "ja-JP" && v.name.toLowerCase().includes("female"))
-        || voices.find(v => v.lang === "ja-JP")
-        || null;
-}
-
-// 音声読み上げ
-function speakError(message) {
-    const utter = new SpeechSynthesisUtterance(message);
-    utter.lang = "ja-JP";
-    utter.rate = 1;
-    utter.pitch = 1.2; // 少し高め＝女性っぽく
-
-    let voice = getFemaleVoice();
-    if (voice) utter.voice = voice;
-
-    speechSynthesis.cancel();
-    speechSynthesis.speak(utter);
-}
-
 function startScan() {
+
+    initSpeech(); // ← ここが重要
 
     let input = document.getElementById("startNumber").value.trim();
     if (!input) return alert("開始番号を入力してください");
@@ -208,7 +127,6 @@ function capture() {
             result.innerHTML = "OK ✔ " + readNumber;
             result.className = "green";
             document.getElementById("okSound").play();
-
             currentNumber++;
 
         } else {
@@ -226,7 +144,7 @@ function capture() {
                 navigator.vibrate([200,100,200]);
             }
 
-            // 🗣 女性音声読み上げ
+            // 🔊 音声
             speakError("ラベルが違います。次は " + expected + " です。");
         }
 
@@ -236,7 +154,3 @@ function capture() {
     });
 }
 </script>
-
-</body>
-</html>
-
