@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Chute Label AUTO OCR</title>
+<title>連番 強制スキャンモード（音声付）</title>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script>
 
 <style>
@@ -34,9 +34,10 @@ video {
 }
 
 input {
-    font-size: 20px;
+    font-size: 22px;
     padding: 5px;
     margin: 5px;
+    text-align: center;
 }
 
 button {
@@ -46,7 +47,7 @@ button {
 }
 
 #result {
-    font-size: 28px;
+    font-size: 30px;
     font-weight: bold;
     margin-top: 10px;
 }
@@ -60,11 +61,11 @@ button {
 }
 
 @keyframes flashRed {
-    0%   { background-color: white; }
-    20%  { background-color: red; }
-    40%  { background-color: white; }
-    60%  { background-color: red; }
-    80%  { background-color: white; }
+    0% { background-color: white; }
+    20% { background-color: red; }
+    40% { background-color: white; }
+    60% { background-color: red; }
+    80% { background-color: white; }
     100% { background-color: white; }
 }
 </style>
@@ -72,9 +73,9 @@ button {
 
 <body>
 
-<h2>Chute → Label AUTO OCR</h2>
+<h2>連番 強制スキャンモード（音声付）</h2>
 
-<input type="text" id="chute" placeholder="シュート番号入力"><br>
+<input type="text" id="startNumber" placeholder="開始番号入力 (例:019)"><br>
 
 <div class="container">
     <video id="video" autoplay playsinline></video>
@@ -97,9 +98,11 @@ button {
 let video = document.getElementById("video");
 let isProcessing = false;
 let isScanning = false;
-let lastRead = "";
 let scanInterval;
+let currentNumber = null;
+let digitLength = 0;
 
+// カメラ起動
 navigator.mediaDevices.getUserMedia({
     video: { facingMode: { exact: "environment" } }
 }).then(stream => {
@@ -109,14 +112,40 @@ navigator.mediaDevices.getUserMedia({
     .then(stream => video.srcObject = stream);
 });
 
+// 女性音声取得
+function getFemaleVoice() {
+    let voices = speechSynthesis.getVoices();
+    return voices.find(v => v.lang === "ja-JP" && v.name.toLowerCase().includes("female"))
+        || voices.find(v => v.lang === "ja-JP")
+        || null;
+}
+
+// 音声読み上げ
+function speakError(message) {
+    const utter = new SpeechSynthesisUtterance(message);
+    utter.lang = "ja-JP";
+    utter.rate = 1;
+    utter.pitch = 1.2; // 少し高め＝女性っぽく
+
+    let voice = getFemaleVoice();
+    if (voice) utter.voice = voice;
+
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utter);
+}
+
 function startScan() {
-    if (isScanning) return;
+
+    let input = document.getElementById("startNumber").value.trim();
+    if (!input) return alert("開始番号を入力してください");
+
+    digitLength = input.length;
+    currentNumber = parseInt(input, 10);
+
     isScanning = true;
 
     scanInterval = setInterval(() => {
-        if (!isProcessing) {
-            capture();
-        }
+        if (!isProcessing) capture();
     }, 1000);
 }
 
@@ -125,10 +154,13 @@ function pauseScan() {
     clearInterval(scanInterval);
 }
 
+function padNumber(num) {
+    return num.toString().padStart(digitLength, "0");
+}
+
 function capture() {
 
     if (!isScanning) return;
-    if (!document.getElementById("chute").value.trim()) return;
 
     isProcessing = true;
 
@@ -162,23 +194,26 @@ function capture() {
         }
     ).then(({ data: { text } }) => {
 
-        let labelNumber = text.replace(/[^0-9]/g, "").trim();
-        let chuteNumber = document.getElementById("chute").value.trim();
+        let readNumber = text.replace(/[^0-9]/g, "").trim();
+        let expected = padNumber(currentNumber);
         let result = document.getElementById("result");
 
-        if (!labelNumber || labelNumber === lastRead) {
+        if (!readNumber) {
             isProcessing = false;
             return;
         }
 
-        lastRead = labelNumber;
+        if (readNumber === expected) {
 
-        if (labelNumber === chuteNumber) {
-            result.innerHTML = "OK ✔ " + labelNumber;
+            result.innerHTML = "OK ✔ " + readNumber;
             result.className = "green";
             document.getElementById("okSound").play();
+
+            currentNumber++;
+
         } else {
-            result.innerHTML = "NG ✖ " + labelNumber;
+
+            result.innerHTML = "NG ✖ " + readNumber + " (次: " + expected + ")";
             result.className = "red";
             document.getElementById("ngSound").play();
 
@@ -190,6 +225,9 @@ function capture() {
             if (navigator.vibrate) {
                 navigator.vibrate([200,100,200]);
             }
+
+            // 🗣 女性音声読み上げ
+            speakError("ラベルが違います。次は " + expected + " です。");
         }
 
         setTimeout(() => {
@@ -201,3 +239,4 @@ function capture() {
 
 </body>
 </html>
+
