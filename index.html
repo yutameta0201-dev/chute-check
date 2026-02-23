@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Chute Label Check OCR</title>
+<title>Chute Label Auto OCR</title>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script>
 
 <style>
@@ -39,12 +39,6 @@ input {
     margin: 5px;
 }
 
-button {
-    font-size: 18px;
-    padding: 8px 15px;
-    margin: 5px;
-}
-
 #result {
     font-size: 28px;
     font-weight: bold;
@@ -72,17 +66,14 @@ button {
 
 <body>
 
-<h2>Chute → Label OCR Check</h2>
+<h2>Chute → Label AUTO OCR</h2>
 
 <input type="text" id="chute" placeholder="シュート番号入力"><br>
 
 <div class="container">
     <video id="video" autoplay playsinline></video>
     <div id="overlay"></div>
-</div><br>
-
-<button onclick="startCamera()">カメラ開始</button>
-<button onclick="capture()">読み取り</button>
+</div>
 
 <p id="result"></p>
 
@@ -95,19 +86,37 @@ button {
 
 <script>
 let video = document.getElementById("video");
+let isProcessing = false;
+let lastRead = "";
 
 function startCamera() {
     navigator.mediaDevices.getUserMedia({
         video: { facingMode: { exact: "environment" } }
     }).then(stream => {
         video.srcObject = stream;
+        startAutoScan();
     }).catch(() => {
         navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => video.srcObject = stream);
+        .then(stream => {
+            video.srcObject = stream;
+            startAutoScan();
+        });
     });
 }
 
+function startAutoScan() {
+    setInterval(() => {
+        if (!isProcessing) {
+            capture();
+        }
+    }, 1000); // 1秒ごとにチェック
+}
+
 function capture() {
+
+    if (!document.getElementById("chute").value.trim()) return;
+
+    isProcessing = true;
 
     let canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
@@ -115,7 +124,6 @@ function capture() {
     let ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0);
 
-    // 🔍 中央40%×20%切り取り
     let cropX = canvas.width * 0.3;
     let cropY = canvas.height * 0.4;
     let cropWidth = canvas.width * 0.4;
@@ -134,19 +142,22 @@ function capture() {
     Tesseract.recognize(
         cropped,
         'eng',
-        { tessedit_char_whitelist: '0123456789' }
+        {
+            tessedit_char_whitelist: '0123456789',
+            tessedit_pageseg_mode: 7
+        }
     ).then(({ data: { text } }) => {
 
         let labelNumber = text.replace(/[^0-9]/g, "").trim();
         let chuteNumber = document.getElementById("chute").value.trim();
         let result = document.getElementById("result");
 
-        if (!labelNumber) {
-            result.innerHTML = "数字が読めません";
-            result.className = "red";
-            document.getElementById("ngSound").play();
+        if (!labelNumber || labelNumber === lastRead) {
+            isProcessing = false;
             return;
         }
+
+        lastRead = labelNumber;
 
         if (labelNumber === chuteNumber) {
             result.innerHTML = "OK ✔ " + labelNumber;
@@ -157,21 +168,27 @@ function capture() {
             result.className = "red";
             document.getElementById("ngSound").play();
 
-            // 🔴 2回フラッシュ
             document.body.classList.add("flash-red");
             setTimeout(() => {
                 document.body.classList.remove("flash-red");
             }, 800);
 
-            // 📳 振動（対応端末のみ）
             if (navigator.vibrate) {
-                navigator.vibrate([200, 100, 200]);
+                navigator.vibrate([200,100,200]);
             }
         }
+
+        setTimeout(() => {
+            isProcessing = false;
+        }, 800);
+
     });
 }
+
+startCamera();
 </script>
 
 </body>
 </html>
+
 
