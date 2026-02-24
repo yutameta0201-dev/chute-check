@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Sequential Chute OCR - 手動認証版</title>
+<title>Sequential OCR 手動版</title>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script>
 
@@ -41,10 +41,18 @@ input {
     text-align: center;
 }
 
-button {
-    font-size: 18px;
-    padding: 8px 15px;
-    margin: 5px;
+.big-button {
+    font-size: 28px;
+    padding: 20px 40px;
+    margin: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 10px;
+}
+
+.big-button:active {
+    background-color: #0056b3;
 }
 
 #result {
@@ -73,26 +81,23 @@ button {
 
 <body>
 
-<h2>連番 強制スキャンモード（手動）</h2>
+<h2>連番 強制スキャン（手動）</h2>
 
-<input type="text" id="startNumber" placeholder="開始番号入力 (例:019)"><br>
+<input type="text" id="startNumber" placeholder="開始番号 (例:019)"><br>
 
 <div class="container">
     <video id="video" autoplay playsinline></video>
     <div id="overlay"></div>
 </div><br>
 
-<button onclick="setStart()">開始番号セット</button>
-<button onclick="capture()">読み取り</button>
+<button onclick="setStart()">開始番号セット</button><br>
+
+<button class="big-button" onclick="capture()">読み取り</button>
 
 <p id="result"></p>
 
 <audio id="okSound">
 <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg">
-</audio>
-
-<audio id="ngSound">
-<source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg">
 </audio>
 
 <script>
@@ -124,6 +129,14 @@ function setStart() {
 
 function padNumber(num) {
     return num.toString().padStart(digitLength, "0");
+}
+
+function speakNG() {
+    let msg = new SpeechSynthesisUtterance("違います");
+    msg.lang = "ja-JP";
+    msg.rate = 1;
+    msg.pitch = 1.2;   // 少し女性寄り
+    speechSynthesis.speak(msg);
 }
 
 function capture() {
@@ -182,9 +195,9 @@ function capture() {
 
             result.innerHTML = "OK ✔ " + readNumber;
             result.className = "green";
-            document.getElementById("okSound").play();
 
-            currentNumber++; // 次へ進む
+            document.getElementById("okSound").play();
+            currentNumber++;
 
         } else {
 
@@ -192,7 +205,7 @@ function capture() {
                 "NG ✖ " + readNumber + " (次: " + expected + ")";
             result.className = "red";
 
-            document.getElementById("ngSound").play();
+            speakNG();
 
             document.body.classList.add("flash-red");
             setTimeout(() => {
