@@ -2,9 +2,8 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>順番チェックOCR 安定版</title>
+<title>順番チェックOCR 手動版</title>
 
-<!-- Tesseract 安定CDN -->
 <script src="https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
 
 <style>
@@ -25,7 +24,7 @@ video{
 #overlay{
     position:absolute;
     border:3px solid lime;
-    width:130px;      /* ← 小さめ枠 */
+    width:130px;
     height:55px;
     top:40%;
     left:50%;
@@ -44,20 +43,20 @@ video{
 button,input{
     font-size:18px;
     margin:5px;
+    padding:8px 12px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>順番チェックOCR</h2>
+<h2>順番チェックOCR（手動）</h2>
 
 開始番号:
 <input type="number" id="startNum" placeholder="例: 019">
 <button onclick="setStart()">設定</button>
 <br>
-<button onclick="startScan()">スタート</button>
-<button onclick="stopScan()">一時停止</button>
+<button onclick="scanNow()">読み取り</button>
 
 <div style="position:relative;">
 <video id="video" autoplay playsinline></video>
@@ -67,8 +66,8 @@ button,input{
 <h1 id="status">待機中</h1>
 
 <script>
+
 let currentNumber = 0;
-let scanning = false;
 let processing = false;
 
 const video = document.getElementById("video");
@@ -102,53 +101,61 @@ function setStart(){
     status.innerText = "次は "+formatNumber(currentNumber);
 }
 
-function startScan(){
+async function scanNow(){
+
+    if(processing) return;
     if(currentNumber===0){
         alert("開始番号を設定してください");
         return;
     }
-    scanning = true;
-    scanLoop();
-}
-
-function stopScan(){
-    scanning = false;
-    status.innerText="停止中";
-}
-
-async function scanLoop(){
-    if(!scanning || processing) return;
 
     processing = true;
+    status.innerText = "読み取り中...";
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
 
-    ctx.drawImage(video,0,0);
+    // 赤枠範囲のみ切り取り
+    const cropWidth = vw * 0.4;
+    const cropHeight = vh * 0.15;
 
-    const result = await Tesseract.recognize(canvas,'eng',{
-        tessedit_char_whitelist:'0123456789'
-    });
+    const cropX = (vw - cropWidth) / 2;
+    const cropY = (vh - cropHeight) / 2;
 
-    let text = result.data.text.replace(/\D/g,'');
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
 
-    if(text !== ""){
-        if(parseInt(text) === currentNumber){
-            status.innerText = "OK "+formatNumber(currentNumber);
-            navigator.vibrate([150]);
-            currentNumber++;
+    ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
+    try{
+        const result = await Tesseract.recognize(canvas,'eng',{
+            tessedit_char_whitelist:'0123456789',
+            tessedit_pageseg_mode:7
+        });
+
+        let text = result.data.text.replace(/\D/g,'');
+
+        if(text !== ""){
+            if(parseInt(text) === currentNumber){
+                status.innerText = "OK "+formatNumber(currentNumber);
+                navigator.vibrate([150]);
+                currentNumber++;
+            }else{
+                status.innerText = "NG "+text;
+                errorFlash();
+            }
         }else{
-            status.innerText = "NG "+text;
-            errorFlash();
+            status.innerText = "読み取れません";
         }
+
+    }catch(err){
+        status.innerText = "OCRエラー";
     }
 
     processing = false;
-
-    setTimeout(scanLoop,1200);   // 負荷軽減
 }
 
 function errorFlash(){
@@ -166,8 +173,8 @@ function errorFlash(){
 function formatNumber(num){
     return num.toString().padStart(3,'0');
 }
+
 </script>
 
 </body>
 </html>
-
