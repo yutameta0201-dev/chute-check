@@ -42,13 +42,13 @@ input {
 }
 
 .big-button {
-    font-size: 28px;
-    padding: 20px 40px;
-    margin: 10px;
+    font-size: 30px;
+    padding: 22px 50px;
+    margin: 15px;
     background-color: #007bff;
     color: white;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
 }
 
 .big-button:active {
@@ -97,7 +97,7 @@ input {
 <p id="result"></p>
 
 <audio id="okSound">
-<source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg">
+<source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg">
 </audio>
 
 <script>
@@ -106,6 +106,7 @@ let isProcessing = false;
 let currentNumber = null;
 let digitLength = 0;
 
+/* ===== カメラ起動 ===== */
 navigator.mediaDevices.getUserMedia({
     video: { facingMode: { ideal: "environment" } }
 }).then(stream => {
@@ -115,6 +116,12 @@ navigator.mediaDevices.getUserMedia({
     .then(stream => video.srcObject = stream);
 });
 
+/* ===== 音声初期化（iPhone対策） ===== */
+speechSynthesis.onvoiceschanged = () => {
+    speechSynthesis.getVoices();
+};
+
+/* ===== 開始番号セット ===== */
 function setStart() {
     let input = document.getElementById("startNumber").value.trim();
     if (!input) return alert("開始番号を入力してください");
@@ -131,14 +138,30 @@ function padNumber(num) {
     return num.toString().padStart(digitLength, "0");
 }
 
+/* ===== NG音声 ===== */
 function speakNG() {
-    let msg = new SpeechSynthesisUtterance("違います");
-    msg.lang = "ja-JP";
-    msg.rate = 1;
-    msg.pitch = 1.2;   // 少し女性寄り
-    speechSynthesis.speak(msg);
+
+    if (!window.speechSynthesis) return;
+
+    const utter = new SpeechSynthesisUtterance("違います");
+    utter.lang = "ja-JP";
+    utter.rate = 1;
+    utter.pitch = 1.3;
+
+    const voices = speechSynthesis.getVoices();
+
+    for (let i = 0; i < voices.length; i++) {
+        if (voices[i].lang.includes("ja")) {
+            utter.voice = voices[i];
+            break;
+        }
+    }
+
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utter);
 }
 
+/* ===== 読み取り ===== */
 function capture() {
 
     if (isProcessing) return;
