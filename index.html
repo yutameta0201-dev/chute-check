@@ -2,59 +2,48 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Sequential OCR 手動版</title>
+<title>QR連番チェック</title>
 
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 
 <style>
-body { font-family: sans-serif; text-align: center; margin: 0; background: white; }
-video { width: 90%; max-width: 400px; border: 2px solid black; }
-.container { position: relative; display: inline-block; }
-#overlay {
-    position: absolute;
-    border: 3px solid red;
-    width: 40%;
-    height: 20%;
-    top: 40%;
-    left: 30%;
-}
-.big-button {
-    font-size: 32px;
-    padding: 25px 60px;
-    margin: 15px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 12px;
-}
-#result { font-size: 30px; font-weight: bold; margin-top: 10px; }
-.red { color: red; }
-.green { color: green; }
+body { font-family:sans-serif; text-align:center; margin:0; }
+video { width:90%; max-width:400px; border:2px solid black; }
 
-.flash-red { animation: flashRed 0.8s; }
-@keyframes flashRed {
-    0%{background:white;}
-    25%{background:red;}
-    50%{background:white;}
-    75%{background:red;}
-    100%{background:white;}
+.big {
+    font-size:30px;
+    padding:20px 50px;
+    margin:10px;
+}
+
+#result { font-size:28px; font-weight:bold; }
+
+.red { color:red; }
+.green { color:green; }
+
+.flash { animation: flash 0.8s; }
+@keyframes flash {
+0%{background:white;}
+25%{background:red;}
+50%{background:white;}
+75%{background:red;}
+100%{background:white;}
 }
 </style>
 </head>
 
 <body>
 
-<h2>連番 強制スキャン（iPhone対応版）</h2>
+<h2>QR連番チェック</h2>
 
-<input type="text" id="startNumber" placeholder="開始番号 (例:019)"><br>
+<button onclick="readWork()">作業QR読み取り</button><br>
 
-<div class="container">
-    <video id="video" autoplay playsinline></video>
-    <div id="overlay"></div>
-</div><br>
+開始シュート:
+<input type="number" id="startChute" value="1"><br>
 
-<button onclick="setStart()">開始番号セット</button><br>
-<button class="big-button" onclick="capture()">読み取り</button>
+<button class="big" onclick="scanQR()">読み取り</button>
+
+<video id="video" autoplay playsinline></video>
 
 <p id="result"></p>
 
@@ -64,116 +53,104 @@ video { width: 90%; max-width: 400px; border: 2px solid black; }
 
 <script>
 let video = document.getElementById("video");
-let currentNumber = null;
-let digitLength = 0;
+let workCode = null;
+let currentChute = 1;
 let isProcessing = false;
-let speechUnlocked = false;
 
-/* ===== カメラ ===== */
+// カメラ起動
 navigator.mediaDevices.getUserMedia({
-    video: { facingMode: { ideal: "environment" } }
-}).then(stream => video.srcObject = stream);
+    video:{ facingMode:"environment" }
+}).then(stream=>video.srcObject=stream);
 
-/* ===== 音声アンロック（超重要）===== */
-function unlockSpeech(){
-    if(speechUnlocked) return;
-
-    let u = new SpeechSynthesisUtterance("");
-    u.lang = "ja-JP";
-    speechSynthesis.speak(u);
-    speechSynthesis.cancel();
-
-    speechUnlocked = true;
+// 作業QR読み取り
+function readWork(){
+    captureQR((data)=>{
+        if(!data.includes("/")){
+            workCode = data;
+            document.getElementById("result").innerHTML =
+                "作業番号: " + workCode;
+        }else{
+            alert("作業QRを読み取ってください");
+        }
+    });
 }
 
-/* ===== 開始番号セット ===== */
-function setStart(){
-    let input = document.getElementById("startNumber").value.trim();
-    if(!input) return alert("開始番号を入力してください");
+// 通常スキャン
+function scanQR(){
 
-    digitLength = input.length;
-    currentNumber = parseInt(input,10);
-
-    document.getElementById("result").innerHTML =
-        "次は " + padNumber(currentNumber);
-    document.getElementById("result").className="";
-}
-
-function padNumber(num){
-    return num.toString().padStart(digitLength,"0");
-}
-
-/* ===== NG音声 ===== */
-function speakNG(){
-    let msg = new SpeechSynthesisUtterance("違います");
-    msg.lang="ja-JP";
-    msg.rate=1;
-    msg.pitch=1.2;
-    speechSynthesis.speak(msg);
-}
-
-/* ===== 読み取り ===== */
-function capture(){
-
-    unlockSpeech(); // ← ここがiPhone対策
-
-    if(isProcessing) return;
-    if(currentNumber===null){
-        alert("開始番号をセットしてください");
+    if(!workCode){
+        alert("先に作業QRを読み取ってください");
         return;
     }
 
-    isProcessing=true;
+    currentChute = parseInt(document.getElementById("startChute").value);
 
-    let canvas=document.createElement("canvas");
-    canvas.width=video.videoWidth;
-    canvas.height=video.videoHeight;
-    let ctx=canvas.getContext("2d");
-    ctx.drawImage(video,0,0);
+    captureQR((data)=>{
 
-    let cropX=canvas.width*0.3;
-    let cropY=canvas.height*0.4;
-    let cropWidth=canvas.width*0.4;
-    let cropHeight=canvas.height*0.2;
+        let expected = workCode + "/" + pad(currentChute);
 
-    let cropped=document.createElement("canvas");
-    cropped.width=cropWidth;
-    cropped.height=cropHeight;
-    let croppedCtx=cropped.getContext("2d");
-    croppedCtx.drawImage(canvas,cropX,cropY,cropWidth,cropHeight,0,0,cropWidth,cropHeight);
+        if(data === expected){
 
-    Tesseract.recognize(
-        cropped,'eng',
-        { tessedit_char_whitelist:'0123456789', tessedit_pageseg_mode:7 }
-    ).then(({data:{text}})=>{
+            document.getElementById("result").innerHTML =
+                "OK ✔ " + data;
+            document.getElementById("result").className="green";
 
-        let readNumber=text.replace(/[^0-9]/g,"").trim();
-        let expected=padNumber(currentNumber);
-        let result=document.getElementById("result");
-
-        if(!readNumber){
-            result.innerHTML="読み取れません";
-            result.className="red";
-            isProcessing=false;
-            return;
-        }
-
-        if(readNumber===expected){
-            result.innerHTML="OK ✔ "+readNumber;
-            result.className="green";
             document.getElementById("okSound").play();
-            currentNumber++;
+
+            currentChute++;
+
         }else{
-            result.innerHTML="NG ✖ "+readNumber+" (次: "+expected+")";
-            result.className="red";
+
+            document.getElementById("result").innerHTML =
+                "NG ✖ " + data + "<br>次: " + expected;
+            document.getElementById("result").className="red";
+
             speakNG();
-            document.body.classList.add("flash-red");
-            setTimeout(()=>document.body.classList.remove("flash-red"),800);
+
+            document.body.classList.add("flash");
+            setTimeout(()=>document.body.classList.remove("flash"),800);
+
             navigator.vibrate?.([200,100,200]);
         }
-
-        isProcessing=false;
     });
+}
+
+// QR読み取り共通
+function captureQR(callback){
+
+    if(isProcessing) return;
+    isProcessing = true;
+
+    let canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    let ctx = canvas.getContext("2d");
+
+    ctx.drawImage(video,0,0);
+
+    let imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
+
+    let code = jsQR(imageData.data, canvas.width, canvas.height);
+
+    if(code){
+        callback(code.data);
+    }else{
+        document.getElementById("result").innerHTML="QRなし";
+    }
+
+    isProcessing = false;
+}
+
+// ゼロ埋め
+function pad(num){
+    return num.toString().padStart(3,"0");
+}
+
+// 音声（iPhone対策）
+function speakNG(){
+    let u = new SpeechSynthesisUtterance("違います");
+    u.lang="ja-JP";
+    speechSynthesis.speak(u);
 }
 </script>
 
