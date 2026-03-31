@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>QR連番チェック 強化版</title>
+<title>QR連番チェック 最終版</title>
 
 <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 
@@ -13,12 +13,44 @@ body {
     margin: 0;
 }
 
-video {
-    width: 90%;
-    max-width: 400px;
-    border: 2px solid black;
+/* タイトル */
+h2 {
+    font-size: 32px;
 }
 
+/* 入力 */
+input {
+    font-size: 24px;
+    padding: 10px;
+    width: 120px;
+    text-align: center;
+}
+
+/* ボタン共通 */
+button {
+    font-size: 26px;
+    padding: 15px 30px;
+    margin: 10px;
+}
+
+/* 読み取りボタン */
+.scan-btn {
+    font-size: 36px;
+    padding: 25px 60px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 12px;
+}
+
+/* カメラ */
+video {
+    width: 95%;
+    max-width: 500px;
+    border: 3px solid black;
+}
+
+/* カメラ枠 */
 .container {
     position: relative;
     display: inline-block;
@@ -26,34 +58,28 @@ video {
 
 #overlay {
     position: absolute;
-    border: 3px solid red;
+    border: 4px solid red;
     width: 30%;
     height: 15%;
     top: 42%;
     left: 35%;
 }
 
-/* 🔴 デカ表示 */
+/* デカ表示 */
 #chuteDisplay {
-    font-size: 60px;
+    font-size: 80px;
     font-weight: bold;
-    margin: 10px;
+    margin: 15px;
+}
+
+/* 結果 */
+#result {
+    font-size: 34px;
+    font-weight: bold;
 }
 
 .ok { color: green; }
 .ng { color: red; }
-
-#result {
-    font-size: 28px;
-    font-weight: bold;
-}
-
-/* ボタン */
-.big {
-    font-size: 28px;
-    padding: 20px 50px;
-    margin: 10px;
-}
 
 /* フラッシュ */
 .flash {
@@ -79,15 +105,18 @@ video {
 開始シュート:
 <input type="number" id="startChute" value="1"><br>
 
-<!-- 🔴 デカ表示 -->
+<!-- デカ表示 -->
 <div id="chuteDisplay">---</div>
 
-<button class="big" onclick="scanQR()">読み取り</button>
-
+<!-- カメラ -->
 <div class="container">
     <video id="video" autoplay playsinline></video>
     <div id="overlay"></div>
 </div>
+
+<!-- 🔵 カメラの下に移動 -->
+<br>
+<button class="scan-btn" onclick="scanQR()">読み取り</button>
 
 <p id="result"></p>
 
@@ -101,7 +130,7 @@ let workCode = null;
 let currentChute = 1;
 let isProcessing = false;
 
-// カメラ
+// カメラ起動
 navigator.mediaDevices.getUserMedia({
     video:{ facingMode:"environment" }
 }).then(stream=>video.srcObject=stream);
@@ -111,9 +140,7 @@ function readWork(){
     captureQR((data)=>{
         if(!data.includes("/")){
             workCode = data;
-
             currentChute = parseInt(document.getElementById("startChute").value);
-
             updateDisplay("ok");
 
             document.getElementById("result").innerHTML =
@@ -145,7 +172,6 @@ function scanQR(){
             document.getElementById("okSound").play();
 
             currentChute++;
-
             updateDisplay("ok");
 
         }else{
@@ -168,11 +194,8 @@ function scanQR(){
 
 // 表示更新
 function updateDisplay(state){
-
     let el = document.getElementById("chuteDisplay");
-
     el.innerHTML = pad(currentChute);
-
     el.className = "";
 
     if(state === "ok") el.classList.add("ok");
