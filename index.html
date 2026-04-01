@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>QR連番チェック 最終版</title>
+<title>QR連番チェック 最終進化版</title>
 
 <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 
@@ -14,9 +14,7 @@ body {
 }
 
 /* タイトル */
-h2 {
-    font-size: 32px;
-}
+h2 { font-size: 32px; }
 
 /* 入力 */
 input {
@@ -26,23 +24,6 @@ input {
     text-align: center;
 }
 
-/* ボタン共通 */
-button {
-    font-size: 26px;
-    padding: 15px 30px;
-    margin: 10px;
-}
-
-/* 読み取りボタン */
-.scan-btn {
-    font-size: 36px;
-    padding: 25px 60px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 12px;
-}
-
 /* カメラ */
 video {
     width: 95%;
@@ -50,7 +31,7 @@ video {
     border: 3px solid black;
 }
 
-/* カメラ枠 */
+/* 枠 */
 .container {
     position: relative;
     display: inline-block;
@@ -67,7 +48,7 @@ video {
 
 /* デカ表示 */
 #chuteDisplay {
-    font-size: 80px;
+    font-size: 90px;
     font-weight: bold;
     margin: 15px;
 }
@@ -83,9 +64,8 @@ video {
 
 /* フラッシュ */
 .flash {
-    animation: flash 0.8s;
+    animation: flash 0.6s;
 }
-
 @keyframes flash {
 0%{background:white;}
 25%{background:red;}
@@ -98,25 +78,19 @@ video {
 
 <body>
 
-<h2>QR連番チェック</h2>
+<h2>QR連番チェック（自動）</h2>
 
 <button onclick="readWork()">作業QR読み取り</button><br>
 
 開始シュート:
 <input type="number" id="startChute" value="1"><br>
 
-<!-- デカ表示 -->
 <div id="chuteDisplay">---</div>
 
-<!-- カメラ -->
-<div class="container">
+<div class="container" onclick="manualScan()">
     <video id="video" autoplay playsinline></video>
     <div id="overlay"></div>
 </div>
-
-<!-- 🔵 カメラの下に移動 -->
-<br>
-<button class="scan-btn" onclick="scanQR()">読み取り</button>
 
 <p id="result"></p>
 
@@ -128,9 +102,12 @@ video {
 let video = document.getElementById("video");
 let workCode = null;
 let currentChute = 1;
-let isProcessing = false;
 
-// カメラ起動
+let isProcessing = false;
+let lastRead = "";
+let scanEnabled = true;
+
+// カメラ
 navigator.mediaDevices.getUserMedia({
     video:{ facingMode:"environment" }
 }).then(stream=>video.srcObject=stream);
@@ -151,45 +128,55 @@ function readWork(){
     });
 }
 
-// 読み取り
-function scanQR(){
-
-    if(!workCode){
-        alert("先に作業QRを読み取ってください");
-        return;
+// 自動スキャンループ
+setInterval(()=>{
+    if(workCode && scanEnabled){
+        captureQR(processResult);
     }
+}, 800);
 
-    captureQR((data)=>{
+// タップでも読み取り
+function manualScan(){
+    if(workCode){
+        captureQR(processResult);
+    }
+}
 
-        let expected = workCode + "/" + pad(currentChute);
+// 判定
+function processResult(data){
 
-        if(data === expected){
+    // 同じQR連続防止
+    if(data === lastRead) return;
+    lastRead = data;
 
-            document.getElementById("result").innerHTML =
-                "OK ✔ " + data;
-            document.getElementById("result").className="ok";
+    let expected = workCode + "/" + pad(currentChute);
 
-            document.getElementById("okSound").play();
+    if(data === expected){
 
-            currentChute++;
-            updateDisplay("ok");
+        document.getElementById("result").innerHTML =
+            "OK ✔ " + data;
+        document.getElementById("result").className="ok";
 
-        }else{
+        document.getElementById("okSound").play();
 
-            document.getElementById("result").innerHTML =
-                "NG ✖ " + data + "<br>次: " + expected;
-            document.getElementById("result").className="ng";
+        currentChute++;
+        updateDisplay("ok");
 
-            speakNG();
+    }else{
 
-            document.body.classList.add("flash");
-            setTimeout(()=>document.body.classList.remove("flash"),800);
+        document.getElementById("result").innerHTML =
+            "NG ✖ " + data + "<br>次: " + expected;
+        document.getElementById("result").className="ng";
 
-            navigator.vibrate?.([200,100,200]);
+        speakNG();
 
-            updateDisplay("ng");
-        }
-    });
+        document.body.classList.add("flash");
+        setTimeout(()=>document.body.classList.remove("flash"),600);
+
+        navigator.vibrate?.([200,100,200]);
+
+        updateDisplay("ng");
+    }
 }
 
 // 表示更新
@@ -197,9 +184,8 @@ function updateDisplay(state){
     let el = document.getElementById("chuteDisplay");
     el.innerHTML = pad(currentChute);
     el.className = "";
-
-    if(state === "ok") el.classList.add("ok");
-    if(state === "ng") el.classList.add("ng");
+    if(state==="ok") el.classList.add("ok");
+    if(state==="ng") el.classList.add("ng");
 }
 
 // QR読み取り（中央のみ）
@@ -226,8 +212,6 @@ function captureQR(callback){
 
     if(code){
         callback(code.data);
-    }else{
-        document.getElementById("result").innerHTML="QRなし";
     }
 
     isProcessing = false;
