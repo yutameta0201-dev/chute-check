@@ -2,70 +2,52 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>QR連番チェック 最終進化版</title>
+<title>QR連番チェック 完全版</title>
 
 <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 
 <style>
-body {
-    font-family: sans-serif;
-    text-align: center;
-    margin: 0;
-}
+body { font-family:sans-serif; text-align:center; margin:0; }
 
-/* タイトル */
-h2 { font-size: 32px; }
+video { width:95%; max-width:500px; border:3px solid black; }
 
-/* 入力 */
-input {
-    font-size: 24px;
-    padding: 10px;
-    width: 120px;
-    text-align: center;
-}
-
-/* カメラ */
-video {
-    width: 95%;
-    max-width: 500px;
-    border: 3px solid black;
-}
-
-/* 枠 */
-.container {
-    position: relative;
-    display: inline-block;
-}
+.container { position:relative; display:inline-block; }
 
 #overlay {
-    position: absolute;
-    border: 4px solid red;
-    width: 30%;
-    height: 15%;
-    top: 42%;
-    left: 35%;
+    position:absolute;
+    border:4px solid red;
+    width:30%;
+    height:15%;
+    top:42%;
+    left:35%;
 }
 
 /* デカ表示 */
 #chuteDisplay {
-    font-size: 90px;
-    font-weight: bold;
-    margin: 15px;
+    font-size:90px;
+    font-weight:bold;
+    margin:10px;
 }
 
 /* 結果 */
-#result {
-    font-size: 34px;
-    font-weight: bold;
-}
+#result { font-size:32px; font-weight:bold; }
 
-.ok { color: green; }
-.ng { color: red; }
+.ok { color:green; }
+.ng { color:red; }
+
+/* ログ */
+#log {
+    max-height:200px;
+    overflow:auto;
+    border-top:2px solid #ccc;
+    margin-top:10px;
+    font-size:18px;
+    text-align:left;
+    padding:5px;
+}
 
 /* フラッシュ */
-.flash {
-    animation: flash 0.6s;
-}
+.flash { animation: flash 0.6s; }
 @keyframes flash {
 0%{background:white;}
 25%{background:red;}
@@ -78,7 +60,7 @@ video {
 
 <body>
 
-<h2>QR連番チェック（自動）</h2>
+<h2>QR連番チェック（完全版）</h2>
 
 <button onclick="readWork()">作業QR読み取り</button><br>
 
@@ -87,12 +69,15 @@ video {
 
 <div id="chuteDisplay">---</div>
 
-<div class="container" onclick="manualScan()">
+<div class="container">
     <video id="video" autoplay playsinline></video>
     <div id="overlay"></div>
 </div>
 
 <p id="result"></p>
+
+<!-- ログ -->
+<div id="log"></div>
 
 <audio id="okSound">
 <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg">
@@ -103,49 +88,38 @@ let video = document.getElementById("video");
 let workCode = null;
 let currentChute = 1;
 
-let isProcessing = false;
 let lastRead = "";
-let scanEnabled = true;
+let isProcessing = false;
 
-// カメラ
+/* カメラ */
 navigator.mediaDevices.getUserMedia({
     video:{ facingMode:"environment" }
 }).then(stream=>video.srcObject=stream);
 
-// 作業QR
+/* 作業QR */
 function readWork(){
     captureQR((data)=>{
         if(!data.includes("/")){
             workCode = data;
             currentChute = parseInt(document.getElementById("startChute").value);
             updateDisplay("ok");
-
-            document.getElementById("result").innerHTML =
-                "作業番号: " + workCode;
+            setResult("作業番号: " + workCode, "");
         }else{
-            alert("作業QRを読み取ってください");
+            alert("作業QRを読んでください");
         }
     });
 }
 
-// 自動スキャンループ
+/* 自動スキャン */
 setInterval(()=>{
-    if(workCode && scanEnabled){
+    if(workCode){
         captureQR(processResult);
     }
 }, 800);
 
-// タップでも読み取り
-function manualScan(){
-    if(workCode){
-        captureQR(processResult);
-    }
-}
-
-// 判定
+/* 判定 */
 function processResult(data){
 
-    // 同じQR連続防止
     if(data === lastRead) return;
     lastRead = data;
 
@@ -153,22 +127,21 @@ function processResult(data){
 
     if(data === expected){
 
-        document.getElementById("result").innerHTML =
-            "OK ✔ " + data;
-        document.getElementById("result").className="ok";
-
+        setResult("OK ✔ " + data, "ok");
         document.getElementById("okSound").play();
+
+        addLog("OK", data);
 
         currentChute++;
         updateDisplay("ok");
 
     }else{
 
-        document.getElementById("result").innerHTML =
-            "NG ✖ " + data + "<br>次: " + expected;
-        document.getElementById("result").className="ng";
+        setResult("NG ✖ " + data + " / 次: " + expected, "ng");
 
         speakNG();
+
+        addLog("NG", data);
 
         document.body.classList.add("flash");
         setTimeout(()=>document.body.classList.remove("flash"),600);
@@ -179,16 +152,32 @@ function processResult(data){
     }
 }
 
-// 表示更新
+/* 表示 */
 function updateDisplay(state){
     let el = document.getElementById("chuteDisplay");
     el.innerHTML = pad(currentChute);
-    el.className = "";
-    if(state==="ok") el.classList.add("ok");
-    if(state==="ng") el.classList.add("ng");
+    el.className = state;
 }
 
-// QR読み取り（中央のみ）
+/* 結果 */
+function setResult(text, cls){
+    let el = document.getElementById("result");
+    el.innerHTML = text;
+    el.className = cls;
+}
+
+/* ログ追加 */
+function addLog(type, data){
+
+    let time = new Date().toLocaleTimeString();
+
+    let log = document.getElementById("log");
+
+    log.innerHTML =
+        "[" + time + "] " + type + " : " + data + "<br>" + log.innerHTML;
+}
+
+/* QR */
 function captureQR(callback){
 
     if(isProcessing) return;
@@ -217,16 +206,34 @@ function captureQR(callback){
     isProcessing = false;
 }
 
-// ゼロ埋め
-function pad(num){
-    return num.toString().padStart(3,"0");
-}
+/* Bluetoothスキャナ入力 */
+let inputBuffer = "";
 
-// 音声
+document.addEventListener("keydown", function(e){
+
+    if(e.key === "Enter"){
+
+        if(inputBuffer){
+            processResult(inputBuffer);
+            inputBuffer = "";
+        }
+
+    }else{
+        inputBuffer += e.key;
+    }
+
+});
+
+/* 音声 */
 function speakNG(){
     let u = new SpeechSynthesisUtterance("違います");
     u.lang="ja-JP";
     speechSynthesis.speak(u);
+}
+
+/* ゼロ埋め */
+function pad(num){
+    return num.toString().padStart(3,"0");
 }
 </script>
 
