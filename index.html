@@ -2,13 +2,41 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+
 <title>QR連番チェック 完全版</title>
 
+<link rel="manifest" href="manifest.json">
 <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 
 <style>
 body { font-family:sans-serif; text-align:center; margin:0; }
 
+/* 🔴 作業バッチボタン（10倍） */
+.big-start-btn {
+    font-size: 60px;
+    padding: 40px 80px;
+    margin: 20px;
+    background: #ff9800;
+    color: white;
+    border: none;
+    border-radius: 15px;
+}
+
+/* 🔴 開始シュート（7倍） */
+.start-label {
+    font-size: 50px;
+    font-weight: bold;
+}
+
+input {
+    font-size: 40px;
+    padding: 10px;
+    width: 150px;
+    text-align: center;
+}
+
+/* カメラ */
 video { width:95%; max-width:500px; border:3px solid black; }
 
 .container { position:relative; display:inline-block; }
@@ -29,13 +57,11 @@ video { width:95%; max-width:500px; border:3px solid black; }
     margin:10px;
 }
 
-/* 結果 */
 #result { font-size:32px; font-weight:bold; }
 
 .ok { color:green; }
 .ng { color:red; }
 
-/* ログ */
 #log {
     max-height:200px;
     overflow:auto;
@@ -46,7 +72,6 @@ video { width:95%; max-width:500px; border:3px solid black; }
     padding:5px;
 }
 
-/* フラッシュ */
 .flash { animation: flash 0.6s; }
 @keyframes flash {
 0%{background:white;}
@@ -60,12 +85,18 @@ video { width:95%; max-width:500px; border:3px solid black; }
 
 <body>
 
-<h2>QR連番チェック（完全版）</h2>
+<h2>QR連番チェック</h2>
 
-<button onclick="readWork()">作業QR読み取り</button><br>
+<!-- 🔴 名前変更＋巨大化 -->
+<button class="big-start-btn" onclick="readWork()">
+作業バッチナンバー
+</button>
 
-開始シュート:
-<input type="number" id="startChute" value="1"><br>
+<br>
+
+<!-- 🔴 超デカ文字 -->
+<span class="start-label">開始シュート：</span>
+<input type="number" id="startChute" value="1">
 
 <div id="chuteDisplay">---</div>
 
@@ -75,8 +106,6 @@ video { width:95%; max-width:500px; border:3px solid black; }
 </div>
 
 <p id="result"></p>
-
-<!-- ログ -->
 <div id="log"></div>
 
 <audio id="okSound">
@@ -87,16 +116,13 @@ video { width:95%; max-width:500px; border:3px solid black; }
 let video = document.getElementById("video");
 let workCode = null;
 let currentChute = 1;
-
 let lastRead = "";
 let isProcessing = false;
 
-/* カメラ */
 navigator.mediaDevices.getUserMedia({
     video:{ facingMode:"environment" }
 }).then(stream=>video.srcObject=stream);
 
-/* 作業QR */
 function readWork(){
     captureQR((data)=>{
         if(!data.includes("/")){
@@ -104,20 +130,16 @@ function readWork(){
             currentChute = parseInt(document.getElementById("startChute").value);
             updateDisplay("ok");
             setResult("作業番号: " + workCode, "");
-        }else{
-            alert("作業QRを読んでください");
         }
     });
 }
 
-/* 自動スキャン */
 setInterval(()=>{
     if(workCode){
         captureQR(processResult);
     }
 }, 800);
 
-/* 判定 */
 function processResult(data){
 
     if(data === lastRead) return;
@@ -129,7 +151,6 @@ function processResult(data){
 
         setResult("OK ✔ " + data, "ok");
         document.getElementById("okSound").play();
-
         addLog("OK", data);
 
         currentChute++;
@@ -140,7 +161,6 @@ function processResult(data){
         setResult("NG ✖ " + data + " / 次: " + expected, "ng");
 
         speakNG();
-
         addLog("NG", data);
 
         document.body.classList.add("flash");
@@ -152,32 +172,26 @@ function processResult(data){
     }
 }
 
-/* 表示 */
 function updateDisplay(state){
     let el = document.getElementById("chuteDisplay");
     el.innerHTML = pad(currentChute);
     el.className = state;
 }
 
-/* 結果 */
 function setResult(text, cls){
     let el = document.getElementById("result");
     el.innerHTML = text;
     el.className = cls;
 }
 
-/* ログ追加 */
 function addLog(type, data){
-
     let time = new Date().toLocaleTimeString();
-
     let log = document.getElementById("log");
 
     log.innerHTML =
         "[" + time + "] " + type + " : " + data + "<br>" + log.innerHTML;
 }
 
-/* QR */
 function captureQR(callback){
 
     if(isProcessing) return;
@@ -196,7 +210,6 @@ function captureQR(callback){
     let cropHeight = canvas.height * 0.15;
 
     let imageData = ctx.getImageData(cropX, cropY, cropWidth, cropHeight);
-
     let code = jsQR(imageData.data, cropWidth, cropHeight);
 
     if(code){
@@ -206,34 +219,30 @@ function captureQR(callback){
     isProcessing = false;
 }
 
-/* Bluetoothスキャナ入力 */
-let inputBuffer = "";
-
-document.addEventListener("keydown", function(e){
-
-    if(e.key === "Enter"){
-
-        if(inputBuffer){
-            processResult(inputBuffer);
-            inputBuffer = "";
+let buffer = "";
+document.addEventListener("keydown", e=>{
+    if(e.key==="Enter"){
+        if(buffer){
+            processResult(buffer);
+            buffer="";
         }
-
     }else{
-        inputBuffer += e.key;
+        buffer += e.key;
     }
-
 });
 
-/* 音声 */
 function speakNG(){
     let u = new SpeechSynthesisUtterance("違います");
     u.lang="ja-JP";
     speechSynthesis.speak(u);
 }
 
-/* ゼロ埋め */
 function pad(num){
     return num.toString().padStart(3,"0");
+}
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
 }
 </script>
 
