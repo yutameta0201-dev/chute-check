@@ -2,19 +2,20 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>検品アプリ（最終版）</title>
+<title>検品アプリ（完成版）</title>
 
 <style>
 body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 
 .container {
     display:grid;
-    grid-template-rows: 120px auto 1fr 150px;
+    grid-template-rows: 120px auto auto 1fr 180px;
     height:100vh;
     gap:10px;
     padding:10px;
 }
 
+/* 上ボタン */
 .top {
     display:flex;
 }
@@ -24,13 +25,13 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
     margin:5px;
     border:3px solid black;
     background:white;
-    font-size:40px;
+    font-size:36px;
     display:flex;
     align-items:center;
     justify-content:center;
 }
 
-/* 黄色バッチ */
+/* バッチ（巨大化） */
 .batch-area {
     border:3px solid black;
     background:yellow;
@@ -38,9 +39,20 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 }
 
 #batchBig {
-    font-size:80px;
+    font-size:110px;  /* ←巨大化 */
     text-align:center;
     font-weight:bold;
+}
+
+/* 作業開始ボタン（超大） */
+#startBtn {
+    width:100%;
+    font-size:60px;
+    padding:20px;
+    background:#ff9800;
+    color:white;
+    border:none;
+    border-radius:10px;
 }
 
 /* 中央 */
@@ -51,11 +63,14 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
     flex-direction:column;
 }
 
-.label { font-size:24px; }
+.label {
+    font-size:20px;
+}
 
+/* シュート（少し小さく） */
 #chuteDisplay {
     flex:1;
-    font-size:140px;
+    font-size:100px; /* ←少し縮小 */
     display:flex;
     align-items:center;
     justify-content:center;
@@ -73,7 +88,7 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 .btn {
     flex:1;
     margin:10px;
-    font-size:40px;
+    font-size:36px;
 }
 
 .complete { background:#2196F3; color:white; }
@@ -86,17 +101,20 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 
 <div class="container">
 
-    <!-- 上ボタン -->
+    <!-- 上 -->
     <div class="top">
         <div class="btnBox" onclick="mode='batch'">検品バッチ</div>
         <div class="btnBox" onclick="mode='start'">開始シュート指定</div>
     </div>
 
-    <!-- 黄色バッチ -->
+    <!-- バッチ -->
     <div class="batch-area">
         <div>バッチNO</div>
         <div id="batchBig">---</div>
     </div>
+
+    <!-- 作業開始 -->
+    <button id="startBtn" onclick="startWork()">作業開始</button>
 
     <!-- 中央 -->
     <div class="center">
@@ -113,7 +131,8 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 </div>
 
 <script>
-let mode = ""; // batch or start
+let mode = "";
+let isWorking = false;
 
 let workCode = "";
 let currentChute = 1;
@@ -138,7 +157,7 @@ document.addEventListener("keydown", e=>{
             updateChute();
             mode="";
         }
-        else{
+        else if(isWorking){
             processResult(buffer);
         }
 
@@ -148,6 +167,20 @@ document.addEventListener("keydown", e=>{
         buffer += e.key;
     }
 });
+
+/* 作業開始 */
+function startWork(){
+
+    if(!workCode){
+        alert("バッチ未設定");
+        return;
+    }
+
+    isWorking = true;
+    updateChute();
+
+    document.body.style.background="#e8f5e9"; // 薄緑
+}
 
 /* 判定 */
 function processResult(data){
@@ -165,6 +198,9 @@ function processResult(data){
         updateChute("ng");
         speakNG();
         addLog("NG", data);
+
+        document.body.style.background="red";
+        setTimeout(()=>document.body.style.background="#e8f5e9",300);
     }
 }
 
@@ -176,9 +212,12 @@ function completeBatch(){
 
     workCode = num.toString().padStart(8,"0");
     currentChute = 1;
+    isWorking = false;
 
     updateBatch();
     updateChute();
+
+    document.body.style.background="#f5f5f5";
 }
 
 /* 表示 */
