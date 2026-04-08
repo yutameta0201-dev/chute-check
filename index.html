@@ -2,39 +2,44 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>検品アプリ（大画面）</title>
+<title>検品アプリ（最終版）</title>
 
 <style>
-body {
-    margin:0;
-    font-family:sans-serif;
-    background:#f5f5f5;
-}
+body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 
-/* グリッド全体 */
 .container {
     display:grid;
-    grid-template-rows: 120px 1fr 150px;
+    grid-template-rows: 120px auto 1fr 150px;
     height:100vh;
     gap:10px;
     padding:10px;
 }
 
-/* 上段 */
 .top {
     display:flex;
-    justify-content:space-between;
 }
 
-.box {
+.btnBox {
     flex:1;
     margin:5px;
     border:3px solid black;
     background:white;
+    font-size:40px;
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:40px;
+}
+
+/* 黄色バッチ */
+.batch-area {
+    border:3px solid black;
+    background:yellow;
+    padding:10px;
+}
+
+#batchBig {
+    font-size:80px;
+    text-align:center;
     font-weight:bold;
 }
 
@@ -46,47 +51,33 @@ body {
     flex-direction:column;
 }
 
-.label {
-    font-size:24px;
-    padding:5px;
-}
+.label { font-size:24px; }
 
-.big-display {
+#chuteDisplay {
     flex:1;
+    font-size:140px;
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:140px;
     font-weight:bold;
 }
 
-/* 下段 */
+.ok { color:green; }
+.ng { color:red; }
+
+/* 下 */
 .bottom {
     display:flex;
-    justify-content:space-between;
 }
 
 .btn {
     flex:1;
     margin:10px;
     font-size:40px;
-    border:none;
-    border-radius:10px;
 }
 
-.complete {
-    background:#2196F3;
-    color:white;
-}
-
-.csv {
-    background:#4CAF50;
-    color:white;
-}
-
-/* 状態色 */
-.ok { color:green; }
-.ng { color:red; }
+.complete { background:#2196F3; color:white; }
+.csv { background:#4CAF50; color:white; }
 
 </style>
 </head>
@@ -95,16 +86,22 @@ body {
 
 <div class="container">
 
-    <!-- 上 -->
+    <!-- 上ボタン -->
     <div class="top">
-        <div class="box" id="batchDisplay">検品バッチ</div>
-        <div class="box">開始シュート指定</div>
+        <div class="btnBox" onclick="mode='batch'">検品バッチ</div>
+        <div class="btnBox" onclick="mode='start'">開始シュート指定</div>
     </div>
 
-    <!-- 中 -->
+    <!-- 黄色バッチ -->
+    <div class="batch-area">
+        <div>バッチNO</div>
+        <div id="batchBig">---</div>
+    </div>
+
+    <!-- 中央 -->
     <div class="center">
         <div class="label">確認シュート</div>
-        <div class="big-display" id="chuteDisplay">---</div>
+        <div id="chuteDisplay">---</div>
     </div>
 
     <!-- 下 -->
@@ -116,28 +113,35 @@ body {
 </div>
 
 <script>
+let mode = ""; // batch or start
+
 let workCode = "";
 let currentChute = 1;
 let buffer = "";
-let okCount = 0;
-let ngCount = 0;
+
 let csvData = [];
 
-/* スキャナ入力 */
+/* 入力 */
 document.body.focus();
 
 document.addEventListener("keydown", e=>{
 
     if(e.key==="Enter"){
 
-        if(!workCode){
+        if(mode === "batch"){
             workCode = buffer;
             updateBatch();
-            buffer="";
-            return;
+            mode="";
+        }
+        else if(mode === "start"){
+            currentChute = parseInt(buffer,10);
+            updateChute();
+            mode="";
+        }
+        else{
+            processResult(buffer);
         }
 
-        processResult(buffer);
         buffer="";
 
     }else{
@@ -145,36 +149,27 @@ document.addEventListener("keydown", e=>{
     }
 });
 
+/* 判定 */
 function processResult(data){
 
     let expected = workCode + "/" + pad(currentChute);
 
     if(data === expected){
 
-        okCount++;
         currentChute++;
         updateChute("ok");
-
         addLog("OK", data);
 
     }else{
 
-        ngCount++;
-
-        speakNG();
-
-        document.body.style.background="red";
-        setTimeout(()=>document.body.style.background="#f5f5f5",300);
-
         updateChute("ng");
+        speakNG();
         addLog("NG", data);
     }
 }
 
 /* 完了 */
 function completeBatch(){
-
-    if(!workCode) return;
 
     let num = parseInt(workCode,10);
     num++;
@@ -188,53 +183,43 @@ function completeBatch(){
 
 /* 表示 */
 function updateBatch(){
-    document.getElementById("batchDisplay").innerText = workCode;
+    document.getElementById("batchBig").innerText = workCode;
 }
 
 function updateChute(state){
     let el = document.getElementById("chuteDisplay");
     el.innerText = pad(currentChute);
-    el.className = "big-display " + (state || "");
-}
-
-/* ログ */
-function addLog(type,data){
-    let time = new Date().toLocaleTimeString();
-
-    csvData.push({
-        time: time,
-        batch: workCode,
-        result: type,
-        value: data
-    });
+    el.className = state || "";
 }
 
 /* CSV */
+function addLog(type,data){
+    let time = new Date().toLocaleTimeString();
+    csvData.push({time,batch:workCode,result:type,value:data});
+}
+
 function downloadCSV(){
-
-    let csv = "時間,バッチ,結果,読取値\n";
-
+    let csv="時間,バッチ,結果,読取値\n";
     csvData.forEach(r=>{
-        csv += `${r.time},${r.batch},${r.result},${r.value}\n`;
+        csv+=`${r.time},${r.batch},${r.result},${r.value}\n`;
     });
 
-    let blob = new Blob([csv], {type:"text/csv"});
-    let link = document.createElement("a");
-
-    link.href = URL.createObjectURL(blob);
-    link.download = "log.csv";
-    link.click();
+    let blob=new Blob([csv],{type:"text/csv"});
+    let a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="log.csv";
+    a.click();
 }
 
 /* 音声 */
 function speakNG(){
-    let u = new SpeechSynthesisUtterance("違います");
+    let u=new SpeechSynthesisUtterance("違います");
     u.lang="ja-JP";
     speechSynthesis.speak(u);
 }
 
-function pad(num){
-    return num.toString().padStart(3,"0");
+function pad(n){
+    return n.toString().padStart(3,"0");
 }
 </script>
 
