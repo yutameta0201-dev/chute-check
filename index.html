@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>検品アプリ（完成版）</title>
+<title>検品アプリ（最終完成版）</title>
 
 <style>
 body { margin:0; font-family:sans-serif; background:#f5f5f5; }
@@ -16,9 +16,7 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 }
 
 /* 上ボタン */
-.top {
-    display:flex;
-}
+.top { display:flex; }
 
 .btnBox {
     flex:1;
@@ -31,7 +29,7 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
     justify-content:center;
 }
 
-/* バッチ（巨大化） */
+/* バッチ（黄色・超デカ） */
 .batch-area {
     border:3px solid black;
     background:yellow;
@@ -39,12 +37,12 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 }
 
 #batchBig {
-    font-size:110px;  /* ←巨大化 */
+    font-size:110px;
     text-align:center;
     font-weight:bold;
 }
 
-/* 作業開始ボタン（超大） */
+/* 作業開始ボタン */
 #startBtn {
     width:100%;
     font-size:60px;
@@ -63,14 +61,12 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
     flex-direction:column;
 }
 
-.label {
-    font-size:20px;
-}
+.label { font-size:20px; }
 
-/* シュート（少し小さく） */
+/* シュート（/01含め表示） */
 #chuteDisplay {
     flex:1;
-    font-size:100px; /* ←少し縮小 */
+    font-size:100px;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -81,9 +77,7 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 .ng { color:red; }
 
 /* 下 */
-.bottom {
-    display:flex;
-}
+.bottom { display:flex; }
 
 .btn {
     flex:1;
@@ -107,7 +101,7 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
         <div class="btnBox" onclick="mode='start'">開始シュート指定</div>
     </div>
 
-    <!-- バッチ -->
+    <!-- バッチ表示 -->
     <div class="batch-area">
         <div>バッチNO</div>
         <div id="batchBig">---</div>
@@ -140,7 +134,7 @@ let buffer = "";
 
 let csvData = [];
 
-/* 入力 */
+/* スキャナ入力 */
 document.body.focus();
 
 document.addEventListener("keydown", e=>{
@@ -179,13 +173,13 @@ function startWork(){
     isWorking = true;
     updateChute();
 
-    document.body.style.background="#e8f5e9"; // 薄緑
+    document.body.style.background="#e8f5e9";
 }
 
-/* 判定 */
+/* 判定（★枝番01固定） */
 function processResult(data){
 
-    let expected = workCode + "/" + pad(currentChute);
+    let expected = workCode + "/" + pad(currentChute) + "/01";
 
     if(data === expected){
 
@@ -227,7 +221,7 @@ function updateBatch(){
 
 function updateChute(state){
     let el = document.getElementById("chuteDisplay");
-    el.innerText = pad(currentChute);
+    el.innerText = pad(currentChute) + "/01";
     el.className = state || "";
 }
 
@@ -238,15 +232,25 @@ function addLog(type,data){
 }
 
 function downloadCSV(){
+
+    if(csvData.length === 0){
+        alert("データなし");
+        return;
+    }
+
     let csv="時間,バッチ,結果,読取値\n";
+
     csvData.forEach(r=>{
         csv+=`${r.time},${r.batch},${r.result},${r.value}\n`;
     });
 
     let blob=new Blob([csv],{type:"text/csv"});
     let a=document.createElement("a");
+
+    let date = new Date().toISOString().slice(0,10);
+
     a.href=URL.createObjectURL(blob);
-    a.download="log.csv";
+    a.download="log_"+date+".csv";
     a.click();
 }
 
