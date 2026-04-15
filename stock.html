@@ -2,14 +2,14 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>在庫カウント（商品名対応版）</title>
+<title>在庫カウント（7桁マスタ対応版）</title>
 
 <style>
 body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 
 .container {
   display:grid;
-  grid-template-rows: 80px 150px 1fr 150px;
+  grid-template-rows: 80px 180px 1fr 150px;
   height:100vh;
   gap:10px;
   padding:10px;
@@ -22,7 +22,7 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
   margin:5px;
   border:3px solid black;
   background:white;
-  font-size:24px;
+  font-size:20px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -39,8 +39,16 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 
 .label { font-size:18px; }
 
-#lastItem { font-size:32px; text-align:center; }
-#itemName { font-size:24px; text-align:center; color:#555; }
+#lastItem {
+  font-size:32px;
+  text-align:center;
+}
+
+#itemName {
+  font-size:24px;
+  text-align:center;
+  color:#555;
+}
 
 #countDisplay {
   font-size:70px;
@@ -88,8 +96,9 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 
   <!-- 中央 -->
   <div class="center">
-    <div class="label">最新スキャン</div>
+    <div class="label">最新スキャン（8桁）</div>
     <div id="lastItem">---</div>
+
     <div id="itemName">商品名未登録</div>
 
     <div class="label">数量</div>
@@ -112,7 +121,12 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 let buffer = "";
 let stockData = {};
 let lastCode = "";
-let master = {}; // ← 商品マスタ
+let master = {};
+
+/* ★ 末尾1桁カット（7桁にする） */
+function getCompareCode(code){
+  return code.slice(0, -1);
+}
 
 /* マスタ読込 */
 document.getElementById("masterFile").addEventListener("change", function(e){
@@ -123,7 +137,7 @@ document.getElementById("masterFile").addEventListener("change", function(e){
     let lines = reader.result.split("\n");
 
     lines.forEach((line,i)=>{
-      if(i === 0) return; // ヘッダ除外
+      if(i === 0) return;
       let cols = line.split(",");
       if(cols.length >= 2){
         master[cols[0].trim()] = cols[1].trim();
@@ -165,17 +179,31 @@ function processScan(code){
 
 /* 表示更新 */
 function updateDisplay(code){
+
+  let compareCode = getCompareCode(code);
+
   document.getElementById("lastItem").innerText = code;
   document.getElementById("countDisplay").innerText = stockData[code];
 
-  let name = master[code] || "未登録商品";
-  document.getElementById("itemName").innerText = name;
+  let name = master[compareCode] || "未登録商品";
+  let nameEl = document.getElementById("itemName");
+
+  nameEl.innerText = name;
+
+  /* 未登録は赤 */
+  if(!master[compareCode]){
+    nameEl.style.color = "red";
+  }else{
+    nameEl.style.color = "#555";
+  }
 
   let list = document.getElementById("list");
   list.innerHTML = "";
 
   for(let key in stockData){
-    let itemName = master[key] || "未登録";
+    let cmp = getCompareCode(key);
+    let itemName = master[cmp] || "未登録";
+
     let row = document.createElement("div");
     row.className = "row";
     row.innerHTML = `<div>${key} ${itemName}</div><div>${stockData[key]}</div>`;
@@ -208,10 +236,12 @@ function clearAll(){
 
 /* CSV */
 function downloadCSV(){
-  let csv = "商品コード,商品名,数量\n";
+  let csv = "商品コード(8桁),商品名,数量\n";
 
   for(let key in stockData){
-    let name = master[key] || "";
+    let cmp = getCompareCode(key);
+    let name = master[cmp] || "";
+
     csv += `${key},${name},${stockData[key]}\n`;
   }
 
