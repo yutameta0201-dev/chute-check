@@ -2,79 +2,68 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>在庫カウント（7桁マスタ対応版）</title>
+<title>在庫カウント（見やすさ強化版）</title>
 
 <style>
 body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 
 .container {
   display:grid;
-  grid-template-rows: 80px 180px 1fr 150px;
+  grid-template-rows: 70px 1fr 100px;
   height:100vh;
   gap:10px;
   padding:10px;
 }
 
-/* 上 */
-.top { display:flex; }
-.btnBox {
-  flex:1;
-  margin:5px;
-  border:3px solid black;
-  background:white;
-  font-size:20px;
+/* 上（マスタ） */
+.top {
   display:flex;
   align-items:center;
   justify-content:center;
 }
 
-/* 中央 */
+/* 中央（メイン表示） */
 .center {
   border:3px solid black;
   background:white;
   display:flex;
   flex-direction:column;
-  padding:10px;
+  justify-content:center;
+  align-items:center;
 }
 
-.label { font-size:18px; }
-
+/* スキャンコード */
 #lastItem {
-  font-size:32px;
-  text-align:center;
+  font-size:28px;
+  margin-bottom:10px;
 }
 
+/* 商品名（デカ） */
 #itemName {
-  font-size:24px;
+  font-size:48px;
+  font-weight:bold;
   text-align:center;
-  color:#555;
+  margin-bottom:20px;
 }
 
+/* 数量（超デカ） */
 #countDisplay {
-  font-size:70px;
-  text-align:center;
+  font-size:120px;
   font-weight:bold;
   color:green;
 }
 
-.list {
-  flex:1;
-  overflow:auto;
-  border-top:2px solid #ccc;
-  margin-top:10px;
-}
-
-.row {
+/* 下（ボタン小さく） */
+.bottom {
   display:flex;
-  justify-content:space-between;
-  padding:5px;
-  border-bottom:1px solid #eee;
-  font-size:16px;
 }
 
-/* 下 */
-.bottom { display:flex; }
-.btn { flex:1; margin:10px; font-size:24px; }
+.btn {
+  flex:1;
+  margin:5px;
+  font-size:18px;
+  padding:10px;
+}
 
 .minus { background:#ff9800; color:white; }
 .clear { background:#f44336; color:white; }
@@ -89,29 +78,21 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 
   <!-- 上 -->
   <div class="top">
-    <div class="btnBox">
-      <input type="file" id="masterFile" accept=".csv">
-    </div>
+    <input type="file" id="masterFile" accept=".csv">
   </div>
 
   <!-- 中央 -->
   <div class="center">
-    <div class="label">最新スキャン（8桁）</div>
     <div id="lastItem">---</div>
-
     <div id="itemName">商品名未登録</div>
-
-    <div class="label">数量</div>
     <div id="countDisplay">0</div>
-
-    <div class="list" id="list"></div>
   </div>
 
   <!-- 下 -->
   <div class="bottom">
     <button class="btn minus" onclick="minusOne()">−1</button>
-    <button class="btn clear" onclick="clearAll()">全クリア</button>
-    <button class="btn csv" onclick="downloadCSV()">CSV出力</button>
+    <button class="btn clear" onclick="clearAll()">クリア</button>
+    <button class="btn csv" onclick="downloadCSV()">CSV</button>
   </div>
 
 </div>
@@ -123,7 +104,7 @@ let stockData = {};
 let lastCode = "";
 let master = {};
 
-/* ★ 末尾1桁カット（7桁にする） */
+/* 7桁比較 */
 function getCompareCode(code){
   return code.slice(0, -1);
 }
@@ -150,7 +131,7 @@ document.getElementById("masterFile").addEventListener("change", function(e){
   reader.readAsText(file);
 });
 
-/* スキャナ入力 */
+/* スキャナ */
 document.body.focus();
 
 document.addEventListener("keydown", e=>{
@@ -177,37 +158,23 @@ function processScan(code){
   beep();
 }
 
-/* 表示更新 */
+/* 表示 */
 function updateDisplay(code){
 
-  let compareCode = getCompareCode(code);
+  let cmp = getCompareCode(code);
 
   document.getElementById("lastItem").innerText = code;
   document.getElementById("countDisplay").innerText = stockData[code];
 
-  let name = master[compareCode] || "未登録商品";
+  let name = master[cmp] || "未登録商品";
   let nameEl = document.getElementById("itemName");
 
   nameEl.innerText = name;
 
-  /* 未登録は赤 */
-  if(!master[compareCode]){
+  if(!master[cmp]){
     nameEl.style.color = "red";
   }else{
-    nameEl.style.color = "#555";
-  }
-
-  let list = document.getElementById("list");
-  list.innerHTML = "";
-
-  for(let key in stockData){
-    let cmp = getCompareCode(key);
-    let itemName = master[cmp] || "未登録";
-
-    let row = document.createElement("div");
-    row.className = "row";
-    row.innerHTML = `<div>${key} ${itemName}</div><div>${stockData[key]}</div>`;
-    list.appendChild(row);
+    nameEl.style.color = "black";
   }
 }
 
@@ -217,39 +184,38 @@ function minusOne(){
     stockData[lastCode]--;
     if(stockData[lastCode] <= 0){
       delete stockData[lastCode];
+      document.getElementById("countDisplay").innerText = "0";
+    }else{
+      document.getElementById("countDisplay").innerText = stockData[lastCode];
     }
-    updateDisplay(lastCode);
   }
 }
 
-/* 全クリア */
+/* クリア */
 function clearAll(){
-  if(confirm("全削除しますか？")){
+  if(confirm("削除しますか？")){
     stockData = {};
     lastCode = "";
     document.getElementById("lastItem").innerText = "---";
     document.getElementById("itemName").innerText = "";
     document.getElementById("countDisplay").innerText = "0";
-    document.getElementById("list").innerHTML = "";
   }
 }
 
 /* CSV */
 function downloadCSV(){
-  let csv = "商品コード(8桁),商品名,数量\n";
+  let csv = "商品コード,商品名,数量\n";
 
   for(let key in stockData){
     let cmp = getCompareCode(key);
     let name = master[cmp] || "";
-
     csv += `${key},${name},${stockData[key]}\n`;
   }
 
   let blob = new Blob([csv], {type:"text/csv"});
   let a = document.createElement("a");
-  let date = new Date().toISOString().slice(0,10);
   a.href = URL.createObjectURL(blob);
-  a.download = "stock_" + date + ".csv";
+  a.download = "stock.csv";
   a.click();
 }
 
