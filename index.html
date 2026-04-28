@@ -3,7 +3,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>検品アプリ（最終完成版）</title>
+<title>検品アプリ（音声付き完成版）</title>
 
 <style>
 body { margin:0; font-family:sans-serif; background:#f5f5f5; }
@@ -83,7 +83,7 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 
 #chuteDisplay {
     flex:1;
-    font-size:20vw; /* ★画面に合わせて巨大化 */
+    font-size:20vw;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -111,7 +111,6 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 
 .complete { background:#2196F3; color:white; }
 .csv { background:#4CAF50; color:white; }
-
 </style>
 </head>
 
@@ -153,6 +152,24 @@ let buffer = "";
 
 let csvData = [];
 
+/* ===== 音声 ===== */
+function speakChute(num){
+    speechSynthesis.cancel();
+    let u = new SpeechSynthesisUtterance(num + "番シュート");
+    u.lang = "ja-JP";
+    u.rate = 1.0;
+    u.volume = 1.0;
+    speechSynthesis.speak(u);
+}
+
+function speakNGChute(num){
+    speechSynthesis.cancel();
+    let u = new SpeechSynthesisUtterance("違います。正しくは " + num + "番シュート");
+    u.lang = "ja-JP";
+    speechSynthesis.speak(u);
+}
+
+/* ===== モード ===== */
 function setMode(m){
     mode = m;
 
@@ -168,6 +185,7 @@ function setMode(m){
 
 document.body.focus();
 
+/* ===== 入力 ===== */
 document.addEventListener("keydown", e=>{
 
     if(e.key==="Enter"){
@@ -181,6 +199,7 @@ document.addEventListener("keydown", e=>{
         else if(mode === "start"){
             currentChute = parseInt(buffer,10);
             updateChute();
+            speakChute(currentChute); // ★読み上げ
             mode="";
             setMode("");
         }
@@ -195,7 +214,7 @@ document.addEventListener("keydown", e=>{
     }
 });
 
-/* ★作業開始（確認ダイアログ追加） */
+/* ===== 作業開始 ===== */
 function startWork(){
 
     if(!workCode){
@@ -204,23 +223,23 @@ function startWork(){
     }
 
     let confirmStart = confirm("作業を開始しますか？");
-
-    if(!confirmStart){
-        return;
-    }
+    if(!confirmStart) return;
 
     isWorking = true;
     updateChute();
+    speakChute(currentChute); // ★開始時読み上げ
+
     document.body.style.background="#e8f5e9";
 }
 
-/* 判定 */
+/* ===== 判定 ===== */
 function processResult(data){
 
     if(data === "9999/999"){
         addLog("キャンセル", "シュート" + currentChute);
         currentChute++;
         updateChute();
+        speakChute(currentChute);
         return;
     }
 
@@ -232,21 +251,24 @@ function processResult(data){
         updateChute("ok");
         addLog("OK", data);
 
-        /* ★OK時 緑フラッシュ */
+        speakChute(currentChute); // ★OK後読み上げ
+
         document.body.style.background="#4CAF50";
         setTimeout(()=>document.body.style.background="#e8f5e9",200);
 
     }else{
 
         updateChute("ng");
-        speakNG();
         addLog("NG", data);
+
+        speakNGChute(currentChute); // ★NG読み上げ
 
         document.body.style.background="red";
         setTimeout(()=>document.body.style.background="#e8f5e9",300);
     }
 }
 
+/* ===== 完了 ===== */
 function completeBatch(){
 
     let num = parseInt(workCode,10);
@@ -262,6 +284,7 @@ function completeBatch(){
     document.body.style.background="#f5f5f5";
 }
 
+/* ===== 表示 ===== */
 function updateBatch(){
     document.getElementById("batchBig").innerText = workCode;
 }
@@ -272,7 +295,7 @@ function updateChute(state){
     el.className = state || "";
 }
 
-/* CSV */
+/* ===== CSV ===== */
 function addLog(type,data){
     let time = new Date().toLocaleTimeString();
     csvData.push({time,batch:workCode,result:type,value:data});
@@ -299,12 +322,6 @@ function downloadCSV(){
     a.href=URL.createObjectURL(blob);
     a.download="log_"+date+".csv";
     a.click();
-}
-
-function speakNG(){
-    let u=new SpeechSynthesisUtterance("間違えています、ラベルを確認してください");
-    u.lang="ja-JP";
-    speechSynthesis.speak(u);
 }
 
 function pad(n){
