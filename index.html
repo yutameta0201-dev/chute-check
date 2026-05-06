@@ -3,7 +3,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>検品アプリ（最終完全版・ブロック連動）</title>
+<title>検品アプリ（最終完全版_FIX）</title>
 
 <style>
 body { margin:0; font-family:sans-serif; background:#f5f5f5; }
@@ -138,7 +138,7 @@ let isWorking=false;
 
 let workCode="";
 let currentChute=1;
-let startChute=1; // ★開始シュート保持
+let startChute=1;
 let buffer="";
 
 let orderMode="asc";
@@ -146,7 +146,7 @@ let machineType=1;
 
 let csvData=[];
 
-/* ===== 音声 ===== */
+/* 音声 */
 function speak(text){
     speechSynthesis.cancel();
     let u=new SpeechSynthesisUtterance(text);
@@ -154,25 +154,19 @@ function speak(text){
     speechSynthesis.speak(u);
 }
 
-/* ===== モード ===== */
+/* モード */
 function setMode(m){
     mode=m;
-
     document.getElementById("batchBtn").classList.remove("activeMode");
     document.getElementById("startBtnTop").classList.remove("activeMode");
 
-    if(m==="batch"){
-        document.getElementById("batchBtn").classList.add("activeMode");
-    }
-    if(m==="start"){
-        document.getElementById("startBtnTop").classList.add("activeMode");
-    }
+    if(m==="batch") document.getElementById("batchBtn").classList.add("activeMode");
+    if(m==="start") document.getElementById("startBtnTop").classList.add("activeMode");
 }
 
-/* ===== 昇順降順 ===== */
+/* 昇降順 */
 function toggleOrder(){
     let btn=document.getElementById("orderBtn");
-
     btn.classList.remove("asc","desc");
 
     if(orderMode==="asc"){
@@ -186,7 +180,7 @@ function toggleOrder(){
     }
 }
 
-/* ===== 号機 ===== */
+/* 号機 */
 function setMachine(m){
     machineType=m;
 
@@ -202,35 +196,21 @@ function setMachine(m){
     speak(m+"号機モード");
 }
 
-/* ===== 最大シュート（★開始シュート基準） ===== */
+/* 最大 */
 function getMaxChute(){
-
-    if(machineType===1){
-        return (startChute<=18)?18:36;
-    }
-
-    if(machineType===3){
-        return (startChute<=20)?20:36;
-    }
-
+    if(machineType===1) return (startChute<=18)?18:36;
+    if(machineType===3) return (startChute<=20)?20:36;
     return 36;
 }
 
-/* ===== 最小シュート（降順用） ===== */
+/* 最小 */
 function getMinChute(){
-
-    if(machineType===1){
-        return (startChute<=18)?1:19;
-    }
-
-    if(machineType===3){
-        return (startChute<=20)?1:21;
-    }
-
+    if(machineType===1) return (startChute<=18)?1:19;
+    if(machineType===3) return (startChute<=20)?1:21;
     return 1;
 }
 
-/* ===== 次 ===== */
+/* 次 */
 function nextChute(){
     if(orderMode==="asc"){
         currentChute++;
@@ -239,7 +219,7 @@ function nextChute(){
     }
 }
 
-/* ===== 入力 ===== */
+/* 入力 */
 document.body.focus();
 
 document.addEventListener("keydown", e=>{
@@ -251,7 +231,7 @@ document.addEventListener("keydown", e=>{
         }
         else if(mode==="start"){
             currentChute=parseInt(buffer,10);
-            startChute=currentChute; // ★ここ重要
+            startChute=currentChute;
             updateChute();
             speak(currentChute+"番");
         }
@@ -266,7 +246,7 @@ document.addEventListener("keydown", e=>{
     }
 });
 
-/* ===== 開始 ===== */
+/* 開始 */
 function startWork(){
 
     if(!workCode){
@@ -286,10 +266,9 @@ function startWork(){
     speak(currentChute+"番");
 }
 
-/* ===== 判定 ===== */
+/* 判定（FIX済） */
 function processResult(data){
 
-    /* ===== キャンセル ===== */
     if(data==="9999/999"){
         addLog("キャンセル","シュート"+currentChute);
         speak("スキップ");
@@ -310,6 +289,7 @@ function processResult(data){
 
         if(isLast){
             speak("完了です");
+            nextChute(); // ★FIXここ
         }else{
             nextChute();
             speak(currentChute+"番");
@@ -322,12 +302,11 @@ function processResult(data){
 
         updateChute("ng");
         addLog("NG",data);
-
         speak("違います "+currentChute+"番");
     }
 }
 
-/* ===== 完了 ===== */
+/* 完了 */
 function completeBatch(){
 
     let max=getMaxChute();
@@ -346,14 +325,13 @@ function completeBatch(){
     workCode=num.toString().padStart(8,"0");
     currentChute=1;
     startChute=1;
-
     isWorking=false;
 
     updateBatch();
     updateChute();
 }
 
-/* ===== 表示 ===== */
+/* 表示 */
 function updateBatch(){
     document.getElementById("batchBig").innerText=workCode;
 }
@@ -364,7 +342,7 @@ function updateChute(state){
     el.className=state||"";
 }
 
-/* ===== CSV ===== */
+/* CSV */
 function addLog(type,data){
     let time=new Date().toLocaleTimeString();
     csvData.push({time,batch:workCode,result:type,value:data});
@@ -391,7 +369,7 @@ function downloadCSV(){
     a.click();
 }
 
-/* ===== 共通 ===== */
+/* 共通 */
 function pad(n){
     return n.toString().padStart(3,"0");
 }
