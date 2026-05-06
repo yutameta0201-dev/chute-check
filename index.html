@@ -3,7 +3,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>検品アプリ（最終完全版_FIX）</title>
+<title>検品アプリ（最終完全版_UTF8対応）</title>
 
 <style>
 body { margin:0; font-family:sans-serif; background:#f5f5f5; }
@@ -196,14 +196,13 @@ function setMachine(m){
     speak(m+"号機モード");
 }
 
-/* 最大 */
+/* 最大・最小 */
 function getMaxChute(){
     if(machineType===1) return (startChute<=18)?18:36;
     if(machineType===3) return (startChute<=20)?20:36;
     return 36;
 }
 
-/* 最小 */
 function getMinChute(){
     if(machineType===1) return (startChute<=18)?1:19;
     if(machineType===3) return (startChute<=20)?1:21;
@@ -266,7 +265,7 @@ function startWork(){
     speak(currentChute+"番");
 }
 
-/* 判定（FIX済） */
+/* 判定 */
 function processResult(data){
 
     if(data==="9999/999"){
@@ -289,7 +288,7 @@ function processResult(data){
 
         if(isLast){
             speak("完了です");
-            nextChute(); // ★FIXここ
+            nextChute();
         }else{
             nextChute();
             speak(currentChute+"番");
@@ -342,12 +341,7 @@ function updateChute(state){
     el.className=state||"";
 }
 
-/* CSV */
-function addLog(type,data){
-    let time=new Date().toLocaleTimeString();
-    csvData.push({time,batch:workCode,result:type,value:data});
-}
-
+/* CSV（★文字化け対策済） */
 function downloadCSV(){
 
     if(csvData.length===0){
@@ -361,12 +355,20 @@ function downloadCSV(){
         csv+=`${r.time},${r.batch},${r.result},${r.value}\n`;
     });
 
-    let blob=new Blob([csv],{type:"text/csv"});
+    let bom="\uFEFF"; // ★これが重要
+
+    let blob=new Blob([bom+csv],{type:"text/csv;charset=utf-8;"});
     let a=document.createElement("a");
 
     a.href=URL.createObjectURL(blob);
     a.download="log.csv";
     a.click();
+}
+
+/* ログ */
+function addLog(type,data){
+    let time=new Date().toLocaleTimeString();
+    csvData.push({time,batch:workCode,result:type,value:data});
 }
 
 /* 共通 */
