@@ -3,14 +3,14 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>検品アプリ（最終完成版）</title>
+<title>検品アプリ（UI強化版）</title>
 
 <style>
 body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 
 .container {
     display:grid;
-    grid-template-rows: 120px auto auto auto 1fr 180px;
+    grid-template-rows: 160px 140px auto auto 1fr 160px;
     height:100vh;
     gap:10px;
     padding:10px;
@@ -18,12 +18,13 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 
 .top { display:flex; }
 
+/* ===== ボタン共通 ===== */
 .btnBox {
     flex:1;
     margin:5px;
     border:3px solid black;
     background:white;
-    font-size:26px;
+    font-size:36px;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -36,11 +37,21 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
     box-shadow: 0 2px 0 rgba(0,0,0,0.3);
 }
 
+/* ===== 状態色 ===== */
 .activeMode {
     background:#4CAF50 !important;
     color:white;
 }
 
+/* 昇順・降順 */
+.asc {
+    background:#b3e5fc !important;
+}
+.desc {
+    background:#f8bbd0 !important;
+}
+
+/* ===== バッチ ===== */
 .batch-area {
     border:3px solid black;
     background:yellow;
@@ -48,14 +59,15 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 }
 
 #batchBig {
-    font-size:90px;
+    font-size:100px;
     text-align:center;
     font-weight:bold;
 }
 
+/* ===== 作業開始 ===== */
 #startBtn {
     width:100%;
-    font-size:50px;
+    font-size:60px;
     padding:20px;
     background:#ff9800;
     color:white;
@@ -63,6 +75,7 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
     border-radius:10px;
 }
 
+/* ===== 中央（小さく） ===== */
 .center {
     border:3px solid black;
     background:white;
@@ -72,7 +85,7 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 
 #chuteDisplay {
     flex:1;
-    font-size:20vw;
+    font-size:12vw; /* ★小さく */
     display:flex;
     align-items:center;
     justify-content:center;
@@ -82,12 +95,13 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 .ok { color:green; }
 .ng { color:red; }
 
+/* ===== 下 ===== */
 .bottom { display:flex; }
 
 .btn {
     flex:1;
     margin:10px;
-    font-size:30px;
+    font-size:32px;
 }
 
 .complete { background:#2196F3; color:white; }
@@ -99,16 +113,16 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 
 <div class="container">
 
-    <!-- モード -->
+    <!-- 上段（大きく） -->
     <div class="top">
-        <div class="btnBox" onclick="setMode('batch')">バッチ</div>
-        <div class="btnBox" onclick="setMode('start')">開始シュート</div>
-        <div class="btnBox" id="orderBtn" onclick="toggleOrder()">昇順</div>
+        <div class="btnBox" id="batchBtn" onclick="setMode('batch')">バッチ</div>
+        <div class="btnBox" id="startBtnTop" onclick="setMode('start')">開始シュート</div>
+        <div class="btnBox asc" id="orderBtn" onclick="toggleOrder()">昇順</div>
     </div>
 
-    <!-- 号機切替 -->
+    <!-- 号機（大きく） -->
     <div class="top">
-        <div class="btnBox" id="m1" onclick="setMachine(1)">1・2号機</div>
+        <div class="btnBox activeMode" id="m1" onclick="setMachine(1)">1・2号機</div>
         <div class="btnBox" id="m3" onclick="setMachine(3)">3号機</div>
     </div>
 
@@ -152,21 +166,39 @@ function speak(text){
     speechSynthesis.speak(u);
 }
 
-/* ===== モード ===== */
-function setMode(m){ mode=m; }
+/* ===== モード（色修正） ===== */
+function setMode(m){
+    mode=m;
 
-/* ===== 昇順降順 ===== */
-function toggleOrder(){
-    if(orderMode==="asc"){
-        orderMode="desc";
-        document.getElementById("orderBtn").innerText="降順";
-    }else{
-        orderMode="asc";
-        document.getElementById("orderBtn").innerText="昇順";
+    document.getElementById("batchBtn").classList.remove("activeMode");
+    document.getElementById("startBtnTop").classList.remove("activeMode");
+
+    if(m==="batch"){
+        document.getElementById("batchBtn").classList.add("activeMode");
+    }
+    if(m==="start"){
+        document.getElementById("startBtnTop").classList.add("activeMode");
     }
 }
 
-/* ===== 号機切替（ボタン色も変わる） ===== */
+/* ===== 昇順降順（色付き） ===== */
+function toggleOrder(){
+    let btn=document.getElementById("orderBtn");
+
+    btn.classList.remove("asc","desc");
+
+    if(orderMode==="asc"){
+        orderMode="desc";
+        btn.innerText="降順";
+        btn.classList.add("desc");
+    }else{
+        orderMode="asc";
+        btn.innerText="昇順";
+        btn.classList.add("asc");
+    }
+}
+
+/* ===== 号機 ===== */
 function setMachine(m){
     machineType=m;
 
@@ -179,10 +211,10 @@ function setMachine(m){
         document.getElementById("m3").classList.add("activeMode");
     }
 
-    speak(m + "号機モード");
+    speak(m+"号機モード");
 }
 
-/* ===== 最大シュート ===== */
+/* ===== 最大 ===== */
 function getMaxChute(){
     if(machineType===1){
         return (currentChute<=18)?18:36;
@@ -193,7 +225,7 @@ function getMaxChute(){
     return 36;
 }
 
-/* ===== 次シュート ===== */
+/* ===== 次 ===== */
 function nextChute(){
     if(orderMode==="asc"){
         currentChute++;
@@ -215,7 +247,7 @@ document.addEventListener("keydown", e=>{
         else if(mode==="start"){
             currentChute=parseInt(buffer,10);
             updateChute();
-            speak(currentChute+"番シュート");
+            speak(currentChute+"番");
         }
         else if(isWorking){
             processResult(buffer);
@@ -245,27 +277,20 @@ function startWork(){
     }
 
     updateChute();
-    speak(currentChute+"番シュート");
-
-    document.body.style.background="#e8f5e9";
+    speak(currentChute+"番");
 }
 
 /* ===== 判定 ===== */
 function processResult(data){
 
-    let max = getMaxChute();
+    let max=getMaxChute();
     let expected=workCode+"/"+pad(currentChute);
 
     if(data===expected){
 
-        // ★最終シュート判定
-        let isLast = false;
-
-        if(orderMode==="asc"){
-            isLast = currentChute === max;
-        }else{
-            isLast = currentChute === 1;
-        }
+        let isLast = (orderMode==="asc") 
+            ? currentChute===max 
+            : currentChute===1;
 
         if(isLast){
             speak("完了です");
@@ -277,18 +302,12 @@ function processResult(data){
         updateChute("ok");
         addLog("OK",data);
 
-        document.body.style.background="#4CAF50";
-        setTimeout(()=>document.body.style.background="#e8f5e9",200);
-
     }else{
 
         updateChute("ng");
         addLog("NG",data);
 
-        speak("違います 正しくは "+currentChute+"番");
-
-        document.body.style.background="red";
-        setTimeout(()=>document.body.style.background="#e8f5e9",300);
+        speak("違います "+currentChute+"番");
     }
 }
 
@@ -297,13 +316,9 @@ function completeBatch(){
 
     let max=getMaxChute();
 
-    let finished=false;
-
-    if(orderMode==="asc"){
-        finished=currentChute>max;
-    }else{
-        finished=currentChute<1;
-    }
+    let finished = (orderMode==="asc")
+        ? currentChute>max
+        : currentChute<1;
 
     if(!finished){
         if(!confirm("最終シュートまで確認していません。次に進みますか？")) return;
@@ -317,8 +332,6 @@ function completeBatch(){
 
     updateBatch();
     updateChute();
-
-    document.body.style.background="#f5f5f5";
 }
 
 /* ===== 表示 ===== */
