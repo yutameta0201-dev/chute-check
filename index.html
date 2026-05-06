@@ -3,14 +3,14 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>検品アプリ（音声付き完成版）</title>
+<title>検品アプリ（最終完成版）</title>
 
 <style>
 body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 
 .container {
     display:grid;
-    grid-template-rows: 120px auto auto 1fr 180px;
+    grid-template-rows: 120px auto auto auto 1fr 180px;
     height:100vh;
     gap:10px;
     padding:10px;
@@ -23,12 +23,11 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
     margin:5px;
     border:3px solid black;
     background:white;
-    font-size:36px;
+    font-size:26px;
     display:flex;
     align-items:center;
     justify-content:center;
     cursor:pointer;
-    transition: all 0.1s ease;
     box-shadow: 0 6px 0 rgba(0,0,0,0.3);
 }
 
@@ -49,27 +48,19 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 }
 
 #batchBig {
-    font-size:110px;
+    font-size:90px;
     text-align:center;
     font-weight:bold;
 }
 
 #startBtn {
     width:100%;
-    font-size:60px;
+    font-size:50px;
     padding:20px;
     background:#ff9800;
     color:white;
     border:none;
     border-radius:10px;
-    transition: all 0.1s ease;
-    box-shadow: 0 6px 0 rgba(0,0,0,0.3);
-}
-
-#startBtn:active {
-    transform: translateY(4px);
-    box-shadow: 0 2px 0 rgba(0,0,0,0.3);
-    background:#e68900;
 }
 
 .center {
@@ -78,8 +69,6 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
     display:flex;
     flex-direction:column;
 }
-
-.label { font-size:20px; }
 
 #chuteDisplay {
     flex:1;
@@ -98,15 +87,7 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 .btn {
     flex:1;
     margin:10px;
-    font-size:36px;
-    border:none;
-    transition: all 0.1s ease;
-    box-shadow: 0 6px 0 rgba(0,0,0,0.3);
-}
-
-.btn:active {
-    transform: translateY(4px);
-    box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+    font-size:30px;
 }
 
 .complete { background:#2196F3; color:white; }
@@ -118,9 +99,17 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 
 <div class="container">
 
+    <!-- モード -->
     <div class="top">
-        <div class="btnBox" id="batchBtn" onclick="setMode('batch')">検品バッチ</div>
-        <div class="btnBox" id="startBtnTop" onclick="setMode('start')">開始シュート指定</div>
+        <div class="btnBox" onclick="setMode('batch')">バッチ</div>
+        <div class="btnBox" onclick="setMode('start')">開始シュート</div>
+        <div class="btnBox" id="orderBtn" onclick="toggleOrder()">昇順</div>
+    </div>
+
+    <!-- 号機切替 -->
+    <div class="top">
+        <div class="btnBox" id="m1" onclick="setMachine(1)">1・2号機</div>
+        <div class="btnBox" id="m3" onclick="setMachine(3)">3号機</div>
     </div>
 
     <div class="batch-area">
@@ -131,7 +120,7 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
     <button id="startBtn" onclick="startWork()">作業開始</button>
 
     <div class="center">
-        <div class="label">確認シュート</div>
+        <div>確認シュート</div>
         <div id="chuteDisplay">---</div>
     </div>
 
@@ -143,78 +132,103 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 </div>
 
 <script>
-let mode = "";
-let isWorking = false;
+let mode="";
+let isWorking=false;
 
-let workCode = "";
-let currentChute = 1;
-let buffer = "";
+let workCode="";
+let currentChute=1;
+let buffer="";
 
-let csvData = [];
+let orderMode="asc";
+let machineType=1;
+
+let csvData=[];
 
 /* ===== 音声 ===== */
-function speakChute(num){
+function speak(text){
     speechSynthesis.cancel();
-    let u = new SpeechSynthesisUtterance(num + "番シュート");
-    u.lang = "ja-JP";
-    u.rate = 1.0;
-    u.volume = 1.0;
-    speechSynthesis.speak(u);
-}
-
-function speakNGChute(num){
-    speechSynthesis.cancel();
-    let u = new SpeechSynthesisUtterance("違います。正しくは " + num + "番シュート");
-    u.lang = "ja-JP";
+    let u=new SpeechSynthesisUtterance(text);
+    u.lang="ja-JP";
     speechSynthesis.speak(u);
 }
 
 /* ===== モード ===== */
-function setMode(m){
-    mode = m;
+function setMode(m){ mode=m; }
 
-    document.getElementById("batchBtn").classList.remove("activeMode");
-    document.getElementById("startBtnTop").classList.remove("activeMode");
-
-    if(m === "batch"){
-        document.getElementById("batchBtn").classList.add("activeMode");
-    }else if(m === "start"){
-        document.getElementById("startBtnTop").classList.add("activeMode");
+/* ===== 昇順降順 ===== */
+function toggleOrder(){
+    if(orderMode==="asc"){
+        orderMode="desc";
+        document.getElementById("orderBtn").innerText="降順";
+    }else{
+        orderMode="asc";
+        document.getElementById("orderBtn").innerText="昇順";
     }
 }
 
-document.body.focus();
+/* ===== 号機切替（ボタン色も変わる） ===== */
+function setMachine(m){
+    machineType=m;
+
+    document.getElementById("m1").classList.remove("activeMode");
+    document.getElementById("m3").classList.remove("activeMode");
+
+    if(m===1){
+        document.getElementById("m1").classList.add("activeMode");
+    }else{
+        document.getElementById("m3").classList.add("activeMode");
+    }
+
+    speak(m + "号機モード");
+}
+
+/* ===== 最大シュート ===== */
+function getMaxChute(){
+    if(machineType===1){
+        return (currentChute<=18)?18:36;
+    }
+    if(machineType===3){
+        return (currentChute<=20)?20:36;
+    }
+    return 36;
+}
+
+/* ===== 次シュート ===== */
+function nextChute(){
+    if(orderMode==="asc"){
+        currentChute++;
+    }else{
+        currentChute--;
+    }
+}
 
 /* ===== 入力 ===== */
-document.addEventListener("keydown", e=>{
+document.body.focus();
 
+document.addEventListener("keydown", e=>{
     if(e.key==="Enter"){
 
-        if(mode === "batch"){
-            workCode = buffer;
+        if(mode==="batch"){
+            workCode=buffer;
             updateBatch();
-            mode="";
-            setMode("");
         }
-        else if(mode === "start"){
-            currentChute = parseInt(buffer,10);
+        else if(mode==="start"){
+            currentChute=parseInt(buffer,10);
             updateChute();
-            speakChute(currentChute); // ★読み上げ
-            mode="";
-            setMode("");
+            speak(currentChute+"番シュート");
         }
         else if(isWorking){
             processResult(buffer);
         }
 
         buffer="";
-
+        mode="";
     }else{
-        buffer += e.key;
+        buffer+=e.key;
     }
 });
 
-/* ===== 作業開始 ===== */
+/* ===== 開始 ===== */
 function startWork(){
 
     if(!workCode){
@@ -222,12 +236,16 @@ function startWork(){
         return;
     }
 
-    let confirmStart = confirm("作業を開始しますか？");
-    if(!confirmStart) return;
+    if(!confirm("開始しますか？")) return;
 
-    isWorking = true;
+    isWorking=true;
+
+    if(orderMode==="desc"){
+        currentChute=getMaxChute();
+    }
+
     updateChute();
-    speakChute(currentChute); // ★開始時読み上げ
+    speak(currentChute+"番シュート");
 
     document.body.style.background="#e8f5e9";
 }
@@ -235,23 +253,29 @@ function startWork(){
 /* ===== 判定 ===== */
 function processResult(data){
 
-    if(data === "9999/999"){
-        addLog("キャンセル", "シュート" + currentChute);
-        currentChute++;
-        updateChute();
-        speakChute(currentChute);
-        return;
-    }
+    let max = getMaxChute();
+    let expected=workCode+"/"+pad(currentChute);
 
-    let expected = workCode + "/" + pad(currentChute);
+    if(data===expected){
 
-    if(data === expected){
+        // ★最終シュート判定
+        let isLast = false;
 
-        currentChute++;
+        if(orderMode==="asc"){
+            isLast = currentChute === max;
+        }else{
+            isLast = currentChute === 1;
+        }
+
+        if(isLast){
+            speak("完了です");
+        }else{
+            nextChute();
+            speak(currentChute+"番");
+        }
+
         updateChute("ok");
-        addLog("OK", data);
-
-        speakChute(currentChute); // ★OK後読み上げ
+        addLog("OK",data);
 
         document.body.style.background="#4CAF50";
         setTimeout(()=>document.body.style.background="#e8f5e9",200);
@@ -259,9 +283,9 @@ function processResult(data){
     }else{
 
         updateChute("ng");
-        addLog("NG", data);
+        addLog("NG",data);
 
-        speakNGChute(currentChute); // ★NG読み上げ
+        speak("違います 正しくは "+currentChute+"番");
 
         document.body.style.background="red";
         setTimeout(()=>document.body.style.background="#e8f5e9",300);
@@ -271,12 +295,25 @@ function processResult(data){
 /* ===== 完了 ===== */
 function completeBatch(){
 
-    let num = parseInt(workCode,10);
-    num++;
+    let max=getMaxChute();
 
-    workCode = num.toString().padStart(8,"0");
-    currentChute = 1;
-    isWorking = false;
+    let finished=false;
+
+    if(orderMode==="asc"){
+        finished=currentChute>max;
+    }else{
+        finished=currentChute<1;
+    }
+
+    if(!finished){
+        if(!confirm("最終シュートまで確認していません。次に進みますか？")) return;
+    }
+
+    let num=parseInt(workCode,10)+1;
+
+    workCode=num.toString().padStart(8,"0");
+    currentChute=1;
+    isWorking=false;
 
     updateBatch();
     updateChute();
@@ -286,24 +323,24 @@ function completeBatch(){
 
 /* ===== 表示 ===== */
 function updateBatch(){
-    document.getElementById("batchBig").innerText = workCode;
+    document.getElementById("batchBig").innerText=workCode;
 }
 
 function updateChute(state){
-    let el = document.getElementById("chuteDisplay");
-    el.innerText = pad(currentChute);
-    el.className = state || "";
+    let el=document.getElementById("chuteDisplay");
+    el.innerText=pad(currentChute);
+    el.className=state||"";
 }
 
 /* ===== CSV ===== */
 function addLog(type,data){
-    let time = new Date().toLocaleTimeString();
+    let time=new Date().toLocaleTimeString();
     csvData.push({time,batch:workCode,result:type,value:data});
 }
 
 function downloadCSV(){
 
-    if(csvData.length === 0){
+    if(csvData.length===0){
         alert("データなし");
         return;
     }
@@ -317,13 +354,12 @@ function downloadCSV(){
     let blob=new Blob([csv],{type:"text/csv"});
     let a=document.createElement("a");
 
-    let date = new Date().toISOString().slice(0,10);
-
     a.href=URL.createObjectURL(blob);
-    a.download="log_"+date+".csv";
+    a.download="log.csv";
     a.click();
 }
 
+/* ===== 共通 ===== */
 function pad(n){
     return n.toString().padStart(3,"0");
 }
