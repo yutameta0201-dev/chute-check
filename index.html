@@ -3,7 +3,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>検品アプリ（最終完全版）</title>
+<title>検品アプリ（最終完全版・ブロック連動）</title>
 
 <style>
 body { margin:0; font-family:sans-serif; background:#f5f5f5; }
@@ -138,6 +138,7 @@ let isWorking=false;
 
 let workCode="";
 let currentChute=1;
+let startChute=1; // ★開始シュート保持
 let buffer="";
 
 let orderMode="asc";
@@ -201,15 +202,32 @@ function setMachine(m){
     speak(m+"号機モード");
 }
 
-/* ===== 最大 ===== */
+/* ===== 最大シュート（★開始シュート基準） ===== */
 function getMaxChute(){
+
     if(machineType===1){
-        return (currentChute<=18)?18:36;
+        return (startChute<=18)?18:36;
     }
+
     if(machineType===3){
-        return (currentChute<=20)?20:36;
+        return (startChute<=20)?20:36;
     }
+
     return 36;
+}
+
+/* ===== 最小シュート（降順用） ===== */
+function getMinChute(){
+
+    if(machineType===1){
+        return (startChute<=18)?1:19;
+    }
+
+    if(machineType===3){
+        return (startChute<=20)?1:21;
+    }
+
+    return 1;
 }
 
 /* ===== 次 ===== */
@@ -233,6 +251,7 @@ document.addEventListener("keydown", e=>{
         }
         else if(mode==="start"){
             currentChute=parseInt(buffer,10);
+            startChute=currentChute; // ★ここ重要
             updateChute();
             speak(currentChute+"番");
         }
@@ -267,28 +286,27 @@ function startWork(){
     speak(currentChute+"番");
 }
 
-/* ===== 判定（★キャンセル復活） ===== */
+/* ===== 判定 ===== */
 function processResult(data){
 
     /* ===== キャンセル ===== */
-    if(data === "9999/999"){
-        addLog("キャンセル", "シュート"+currentChute);
+    if(data==="9999/999"){
+        addLog("キャンセル","シュート"+currentChute);
         speak("スキップ");
-
         nextChute();
         updateChute();
-
         return;
     }
 
     let max=getMaxChute();
+    let min=getMinChute();
     let expected=workCode+"/"+pad(currentChute);
 
     if(data===expected){
 
-        let isLast = (orderMode==="asc") 
-            ? currentChute===max 
-            : currentChute===1;
+        let isLast=(orderMode==="asc")
+            ? currentChute===max
+            : currentChute===min;
 
         if(isLast){
             speak("完了です");
@@ -313,10 +331,11 @@ function processResult(data){
 function completeBatch(){
 
     let max=getMaxChute();
+    let min=getMinChute();
 
-    let finished = (orderMode==="asc")
+    let finished=(orderMode==="asc")
         ? currentChute>max
-        : currentChute<1;
+        : currentChute<min;
 
     if(!finished){
         if(!confirm("最終シュートまで確認していません。次に進みますか？")) return;
@@ -326,6 +345,8 @@ function completeBatch(){
 
     workCode=num.toString().padStart(8,"0");
     currentChute=1;
+    startChute=1;
+
     isWorking=false;
 
     updateBatch();
