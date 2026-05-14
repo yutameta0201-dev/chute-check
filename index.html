@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>検品アプリ（最終完全版_UTF8対応）</title>
+<title>検品アプリ（音声改善版）</title>
 
 <style>
 body {
@@ -127,27 +127,41 @@ body {
 <div class="container">
 
     <div class="top">
-        <div class="btnBox" id="batchBtn" onclick="setMode('batch')">
+
+        <div class="btnBox"
+             id="batchBtn"
+             onclick="setMode('batch')">
             バッチ
         </div>
 
-        <div class="btnBox" id="startBtnTop" onclick="setMode('start')">
+        <div class="btnBox"
+             id="startBtnTop"
+             onclick="setMode('start')">
             開始シュート
         </div>
 
-        <div class="btnBox asc" id="orderBtn" onclick="toggleOrder()">
+        <div class="btnBox asc"
+             id="orderBtn"
+             onclick="toggleOrder()">
             昇順
         </div>
+
     </div>
 
     <div class="top">
-        <div class="btnBox activeMode" id="m1" onclick="setMachine(1)">
+
+        <div class="btnBox activeMode"
+             id="m1"
+             onclick="setMachine(1)">
             1・2号機
         </div>
 
-        <div class="btnBox" id="m3" onclick="setMachine(3)">
+        <div class="btnBox"
+             id="m3"
+             onclick="setMachine(3)">
             3号機
         </div>
+
     </div>
 
     <div class="batch-area">
@@ -155,7 +169,8 @@ body {
         <div id="batchBig">---</div>
     </div>
 
-    <button id="startBtn" onclick="startWork()">
+    <button id="startBtn"
+            onclick="startWork()">
         作業開始
     </button>
 
@@ -165,13 +180,17 @@ body {
     </div>
 
     <div class="bottom">
-        <button class="btn complete" onclick="completeBatch()">
+
+        <button class="btn complete"
+                onclick="completeBatch()">
             完了 → 次へ
         </button>
 
-        <button class="btn csv" onclick="downloadCSV()">
+        <button class="btn csv"
+                onclick="downloadCSV()">
             CSV出力
         </button>
+
     </div>
 
 </div>
@@ -191,44 +210,78 @@ let machineType=1;
 
 let csvData=[];
 
-/* 音声 */
+let speaking=false;
+
+/* =========================
+   音声（改善版）
+========================= */
 function speak(text){
 
-    speechSynthesis.cancel();
+    try{
 
-    let u=new SpeechSynthesisUtterance(text);
+        if(speechSynthesis.speaking){
+            speechSynthesis.cancel();
+        }
 
-    u.lang="ja-JP";
+        let u = new SpeechSynthesisUtterance(text);
 
-    speechSynthesis.speak(u);
+        u.lang="ja-JP";
+
+        // ★少し速く
+        u.rate=1.1;
+
+        // ★高さ
+        u.pitch=1.0;
+
+        // ★音量
+        u.volume=1;
+
+        speaking=true;
+
+        u.onend=()=>{
+            speaking=false;
+        };
+
+        speechSynthesis.speak(u);
+
+    }catch(e){
+        console.log(e);
+    }
 }
 
-/* モード */
+/* =========================
+   モード
+========================= */
 function setMode(m){
 
     mode=m;
 
-    document.getElementById("batchBtn").classList.remove("activeMode");
-    document.getElementById("startBtnTop").classList.remove("activeMode");
+    document.getElementById("batchBtn")
+        .classList.remove("activeMode");
+
+    document.getElementById("startBtnTop")
+        .classList.remove("activeMode");
 
     if(m==="batch"){
 
-        document.getElementById("batchBtn").classList.add("activeMode");
+        document.getElementById("batchBtn")
+            .classList.add("activeMode");
 
-        // ★追加
-        speak("開始バッチのQRを読み込んでください");
+        speak("開始バッチのキューアールを読み込んでください");
     }
 
     if(m==="start"){
 
-        document.getElementById("startBtnTop").classList.add("activeMode");
+        document.getElementById("startBtnTop")
+            .classList.add("activeMode");
 
-        // ★追加
-        speak("検品を始めるシュートのQRを読み込んでください");
+        speak("検品を始めるシュートのキューアールを読み込んでください");
     }
 }
 
-/* 昇降順 */
+/* =========================
+   昇順降順
+========================= */
 function toggleOrder(){
 
     let btn=document.getElementById("orderBtn");
@@ -243,6 +296,8 @@ function toggleOrder(){
 
         btn.classList.add("desc");
 
+        speak("降順モードです");
+
     }else{
 
         orderMode="asc";
@@ -250,30 +305,41 @@ function toggleOrder(){
         btn.innerText="昇順";
 
         btn.classList.add("asc");
+
+        speak("昇順モードです");
     }
 }
 
-/* 号機 */
+/* =========================
+   号機
+========================= */
 function setMachine(m){
 
     machineType=m;
 
-    document.getElementById("m1").classList.remove("activeMode");
-    document.getElementById("m3").classList.remove("activeMode");
+    document.getElementById("m1")
+        .classList.remove("activeMode");
+
+    document.getElementById("m3")
+        .classList.remove("activeMode");
 
     if(m===1){
 
-        document.getElementById("m1").classList.add("activeMode");
+        document.getElementById("m1")
+            .classList.add("activeMode");
 
     }else{
 
-        document.getElementById("m3").classList.add("activeMode");
+        document.getElementById("m3")
+            .classList.add("activeMode");
     }
 
-    speak(m+"号機モード");
+    speak(m + "号機モードです");
 }
 
-/* 最大・最小 */
+/* =========================
+   最大最小
+========================= */
 function getMaxChute(){
 
     if(machineType===1){
@@ -300,7 +366,9 @@ function getMinChute(){
     return 1;
 }
 
-/* 次 */
+/* =========================
+   次シュート
+========================= */
 function nextChute(){
 
     if(orderMode==="asc"){
@@ -313,7 +381,9 @@ function nextChute(){
     }
 }
 
-/* 入力 */
+/* =========================
+   キーボード入力
+========================= */
 document.body.focus();
 
 document.addEventListener("keydown", e=>{
@@ -325,7 +395,10 @@ document.addEventListener("keydown", e=>{
             workCode=buffer;
 
             updateBatch();
+
+            speak("バッチ " + workCode + " を登録しました");
         }
+
         else if(mode==="start"){
 
             currentChute=parseInt(buffer,10);
@@ -334,8 +407,9 @@ document.addEventListener("keydown", e=>{
 
             updateChute();
 
-            speak(currentChute+"番");
+            speak(currentChute + "ばんから開始します");
         }
+
         else if(isWorking){
 
             processResult(buffer);
@@ -350,12 +424,16 @@ document.addEventListener("keydown", e=>{
     }
 });
 
-/* 開始 */
+/* =========================
+   作業開始
+========================= */
 function startWork(){
 
     if(!workCode){
 
         alert("バッチ未設定");
+
+        speak("バッチが未設定です");
 
         return;
     }
@@ -371,17 +449,19 @@ function startWork(){
 
     updateChute();
 
-    speak(currentChute+"番");
+    speak(currentChute + "ばんです");
 }
 
-/* 判定 */
+/* =========================
+   判定
+========================= */
 function processResult(data){
 
     if(data==="9999/999"){
 
         addLog("キャンセル","シュート"+currentChute);
 
-        speak("スキップ");
+        speak("スキップします");
 
         nextChute();
 
@@ -404,7 +484,7 @@ function processResult(data){
 
         if(isLast){
 
-            speak("完了です");
+            speak("全シュート完了です");
 
             nextChute();
 
@@ -412,7 +492,7 @@ function processResult(data){
 
             nextChute();
 
-            speak(currentChute+"番");
+            speak(currentChute + "ばんです");
         }
 
         updateChute("ok");
@@ -425,11 +505,13 @@ function processResult(data){
 
         addLog("NG",data);
 
-        speak("違います "+currentChute+"番");
+        speak("違います " + currentChute + "ばんです");
     }
 }
 
-/* 完了 */
+/* =========================
+   完了
+========================= */
 function completeBatch(){
 
     let max=getMaxChute();
@@ -458,12 +540,17 @@ function completeBatch(){
     updateBatch();
 
     updateChute();
+
+    speak("次のバッチへ進みます");
 }
 
-/* 表示 */
+/* =========================
+   表示更新
+========================= */
 function updateBatch(){
 
-    document.getElementById("batchBig").innerText=workCode;
+    document.getElementById("batchBig")
+        .innerText=workCode;
 }
 
 function updateChute(state){
@@ -472,15 +559,19 @@ function updateChute(state){
 
     el.innerText=pad(currentChute);
 
-    el.className=state||"";
+    el.className=state || "";
 }
 
-/* CSV（文字化け対策済） */
+/* =========================
+   CSV
+========================= */
 function downloadCSV(){
 
     if(csvData.length===0){
 
         alert("データなし");
+
+        speak("データがありません");
 
         return;
     }
@@ -495,7 +586,7 @@ function downloadCSV(){
     let bom="\uFEFF";
 
     let blob=new Blob(
-        [bom+csv],
+        [bom + csv],
         {type:"text/csv;charset=utf-8;"}
     );
 
@@ -506,9 +597,13 @@ function downloadCSV(){
     a.download="log.csv";
 
     a.click();
+
+    speak("シーエスブイを出力しました");
 }
 
-/* ログ */
+/* =========================
+   ログ
+========================= */
 function addLog(type,data){
 
     let time=new Date().toLocaleTimeString();
@@ -521,7 +616,9 @@ function addLog(type,data){
     });
 }
 
-/* 共通 */
+/* =========================
+   ゼロ埋め
+========================= */
 function pad(n){
 
     return n.toString().padStart(3,"0");
