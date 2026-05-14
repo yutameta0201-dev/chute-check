@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,7 +5,11 @@
 <title>検品アプリ（最終完全版_UTF8対応）</title>
 
 <style>
-body { margin:0; font-family:sans-serif; background:#f5f5f5; }
+body {
+    margin:0;
+    font-family:sans-serif;
+    background:#f5f5f5;
+}
 
 .container {
     display:grid;
@@ -16,7 +19,9 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
     padding:10px;
 }
 
-.top { display:flex; }
+.top {
+    display:flex;
+}
 
 .btnBox {
     flex:1;
@@ -41,8 +46,13 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
     color:white;
 }
 
-.asc { background:#b3e5fc !important; }
-.desc { background:#f8bbd0 !important; }
+.asc {
+    background:#b3e5fc !important;
+}
+
+.desc {
+    background:#f8bbd0 !important;
+}
 
 .batch-area {
     border:3px solid black;
@@ -82,10 +92,17 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
     font-weight:bold;
 }
 
-.ok { color:green; }
-.ng { color:red; }
+.ok {
+    color:green;
+}
 
-.bottom { display:flex; }
+.ng {
+    color:red;
+}
+
+.bottom {
+    display:flex;
+}
 
 .btn {
     flex:1;
@@ -93,8 +110,15 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
     font-size:32px;
 }
 
-.complete { background:#2196F3; color:white; }
-.csv { background:#4CAF50; color:white; }
+.complete {
+    background:#2196F3;
+    color:white;
+}
+
+.csv {
+    background:#4CAF50;
+    color:white;
+}
 </style>
 </head>
 
@@ -103,14 +127,27 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
 <div class="container">
 
     <div class="top">
-        <div class="btnBox" id="batchBtn" onclick="setMode('batch')">バッチ</div>
-        <div class="btnBox" id="startBtnTop" onclick="setMode('start')">開始シュート</div>
-        <div class="btnBox asc" id="orderBtn" onclick="toggleOrder()">昇順</div>
+        <div class="btnBox" id="batchBtn" onclick="setMode('batch')">
+            バッチ
+        </div>
+
+        <div class="btnBox" id="startBtnTop" onclick="setMode('start')">
+            開始シュート
+        </div>
+
+        <div class="btnBox asc" id="orderBtn" onclick="toggleOrder()">
+            昇順
+        </div>
     </div>
 
     <div class="top">
-        <div class="btnBox activeMode" id="m1" onclick="setMachine(1)">1・2号機</div>
-        <div class="btnBox" id="m3" onclick="setMachine(3)">3号機</div>
+        <div class="btnBox activeMode" id="m1" onclick="setMachine(1)">
+            1・2号機
+        </div>
+
+        <div class="btnBox" id="m3" onclick="setMachine(3)">
+            3号機
+        </div>
     </div>
 
     <div class="batch-area">
@@ -118,7 +155,9 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
         <div id="batchBig">---</div>
     </div>
 
-    <button id="startBtn" onclick="startWork()">作業開始</button>
+    <button id="startBtn" onclick="startWork()">
+        作業開始
+    </button>
 
     <div class="center">
         <div>確認シュート</div>
@@ -126,13 +165,19 @@ body { margin:0; font-family:sans-serif; background:#f5f5f5; }
     </div>
 
     <div class="bottom">
-        <button class="btn complete" onclick="completeBatch()">完了 → 次へ</button>
-        <button class="btn csv" onclick="downloadCSV()">CSV出力</button>
+        <button class="btn complete" onclick="completeBatch()">
+            完了 → 次へ
+        </button>
+
+        <button class="btn csv" onclick="downloadCSV()">
+            CSV出力
+        </button>
     </div>
 
 </div>
 
 <script>
+
 let mode="";
 let isWorking=false;
 
@@ -148,48 +193,80 @@ let csvData=[];
 
 /* 音声 */
 function speak(text){
+
     speechSynthesis.cancel();
+
     let u=new SpeechSynthesisUtterance(text);
+
     u.lang="ja-JP";
+
     speechSynthesis.speak(u);
 }
 
 /* モード */
 function setMode(m){
+
     mode=m;
+
     document.getElementById("batchBtn").classList.remove("activeMode");
     document.getElementById("startBtnTop").classList.remove("activeMode");
 
-    if(m==="batch") document.getElementById("batchBtn").classList.add("activeMode");
-    if(m==="start") document.getElementById("startBtnTop").classList.add("activeMode");
+    if(m==="batch"){
+
+        document.getElementById("batchBtn").classList.add("activeMode");
+
+        // ★追加
+        speak("開始バッチのQRを読み込んでください");
+    }
+
+    if(m==="start"){
+
+        document.getElementById("startBtnTop").classList.add("activeMode");
+
+        // ★追加
+        speak("検品を始めるシュートのQRを読み込んでください");
+    }
 }
 
 /* 昇降順 */
 function toggleOrder(){
+
     let btn=document.getElementById("orderBtn");
+
     btn.classList.remove("asc","desc");
 
     if(orderMode==="asc"){
+
         orderMode="desc";
+
         btn.innerText="降順";
+
         btn.classList.add("desc");
+
     }else{
+
         orderMode="asc";
+
         btn.innerText="昇順";
+
         btn.classList.add("asc");
     }
 }
 
 /* 号機 */
 function setMachine(m){
+
     machineType=m;
 
     document.getElementById("m1").classList.remove("activeMode");
     document.getElementById("m3").classList.remove("activeMode");
 
     if(m===1){
+
         document.getElementById("m1").classList.add("activeMode");
+
     }else{
+
         document.getElementById("m3").classList.add("activeMode");
     }
 
@@ -198,22 +275,40 @@ function setMachine(m){
 
 /* 最大・最小 */
 function getMaxChute(){
-    if(machineType===1) return (startChute<=18)?18:36;
-    if(machineType===3) return (startChute<=20)?20:36;
+
+    if(machineType===1){
+        return (startChute<=18)?18:36;
+    }
+
+    if(machineType===3){
+        return (startChute<=20)?20:36;
+    }
+
     return 36;
 }
 
 function getMinChute(){
-    if(machineType===1) return (startChute<=18)?1:19;
-    if(machineType===3) return (startChute<=20)?1:21;
+
+    if(machineType===1){
+        return (startChute<=18)?1:19;
+    }
+
+    if(machineType===3){
+        return (startChute<=20)?1:21;
+    }
+
     return 1;
 }
 
 /* 次 */
 function nextChute(){
+
     if(orderMode==="asc"){
+
         currentChute++;
+
     }else{
+
         currentChute--;
     }
 }
@@ -222,25 +317,35 @@ function nextChute(){
 document.body.focus();
 
 document.addEventListener("keydown", e=>{
+
     if(e.key==="Enter"){
 
         if(mode==="batch"){
+
             workCode=buffer;
+
             updateBatch();
         }
         else if(mode==="start"){
+
             currentChute=parseInt(buffer,10);
+
             startChute=currentChute;
+
             updateChute();
+
             speak(currentChute+"番");
         }
         else if(isWorking){
+
             processResult(buffer);
         }
 
         buffer="";
         mode="";
-    }else{
+    }
+    else{
+
         buffer+=e.key;
     }
 });
@@ -249,7 +354,9 @@ document.addEventListener("keydown", e=>{
 function startWork(){
 
     if(!workCode){
+
         alert("バッチ未設定");
+
         return;
     }
 
@@ -258,10 +365,12 @@ function startWork(){
     isWorking=true;
 
     if(orderMode==="desc"){
+
         currentChute=getMaxChute();
     }
 
     updateChute();
+
     speak(currentChute+"番");
 }
 
@@ -269,15 +378,22 @@ function startWork(){
 function processResult(data){
 
     if(data==="9999/999"){
+
         addLog("キャンセル","シュート"+currentChute);
+
         speak("スキップ");
+
         nextChute();
+
         updateChute();
+
         return;
     }
 
     let max=getMaxChute();
+
     let min=getMinChute();
+
     let expected=workCode+"/"+pad(currentChute);
 
     if(data===expected){
@@ -287,20 +403,28 @@ function processResult(data){
             : currentChute===min;
 
         if(isLast){
+
             speak("完了です");
+
             nextChute();
+
         }else{
+
             nextChute();
+
             speak(currentChute+"番");
         }
 
         updateChute("ok");
+
         addLog("OK",data);
 
     }else{
 
         updateChute("ng");
+
         addLog("NG",data);
+
         speak("違います "+currentChute+"番");
     }
 }
@@ -309,6 +433,7 @@ function processResult(data){
 function completeBatch(){
 
     let max=getMaxChute();
+
     let min=getMinChute();
 
     let finished=(orderMode==="asc")
@@ -316,67 +441,93 @@ function completeBatch(){
         : currentChute<min;
 
     if(!finished){
+
         if(!confirm("最終シュートまで確認していません。次に進みますか？")) return;
     }
 
     let num=parseInt(workCode,10)+1;
 
     workCode=num.toString().padStart(8,"0");
+
     currentChute=1;
+
     startChute=1;
+
     isWorking=false;
 
     updateBatch();
+
     updateChute();
 }
 
 /* 表示 */
 function updateBatch(){
+
     document.getElementById("batchBig").innerText=workCode;
 }
 
 function updateChute(state){
+
     let el=document.getElementById("chuteDisplay");
+
     el.innerText=pad(currentChute);
+
     el.className=state||"";
 }
 
-/* CSV（★文字化け対策済） */
+/* CSV（文字化け対策済） */
 function downloadCSV(){
 
     if(csvData.length===0){
+
         alert("データなし");
+
         return;
     }
 
     let csv="時間,バッチ,結果,内容\n";
 
     csvData.forEach(r=>{
+
         csv+=`${r.time},${r.batch},${r.result},${r.value}\n`;
     });
 
-    let bom="\uFEFF"; // ★これが重要
+    let bom="\uFEFF";
 
-    let blob=new Blob([bom+csv],{type:"text/csv;charset=utf-8;"});
+    let blob=new Blob(
+        [bom+csv],
+        {type:"text/csv;charset=utf-8;"}
+    );
+
     let a=document.createElement("a");
 
     a.href=URL.createObjectURL(blob);
+
     a.download="log.csv";
+
     a.click();
 }
 
 /* ログ */
 function addLog(type,data){
+
     let time=new Date().toLocaleTimeString();
-    csvData.push({time,batch:workCode,result:type,value:data});
+
+    csvData.push({
+        time,
+        batch:workCode,
+        result:type,
+        value:data
+    });
 }
 
 /* 共通 */
 function pad(n){
+
     return n.toString().padStart(3,"0");
 }
+
 </script>
 
 </body>
 </html>
-```
