@@ -213,7 +213,7 @@ let csvData=[];
 let speaking=false;
 
 /* =========================
-   音声（改善版）
+   音声
 ========================= */
 function speak(text){
 
@@ -227,14 +227,11 @@ function speak(text){
 
         u.lang="ja-JP";
 
-        // ★少し速く
         u.rate=1.15;
 
-        // ★高さ
         u.pitch=1;
 
-        // ★音量
-        u.volume=2;
+        u.volume=1;
 
         speaking=true;
 
@@ -267,7 +264,7 @@ function setMode(m){
         document.getElementById("batchBtn")
             .classList.add("activeMode");
 
-        speak("開始バッチのキューアールコードを読み込んでクダサーーーーーーーーーーーーーイ");
+        speak("開始バッチのキューアールコードを読み込んでください");
     }
 
     if(m==="start"){
@@ -275,7 +272,7 @@ function setMode(m){
         document.getElementById("startBtnTop")
             .classList.add("activeMode");
 
-        speak("検品を始めるシュートのキューアールコードを読み込んでくだちゃい");
+        speak("開始シュートを読み込んでください");
     }
 }
 
@@ -392,7 +389,10 @@ document.addEventListener("keydown", e=>{
 
         if(mode==="batch"){
 
-            workCode=buffer;
+            // 数字だけ抜く
+            let b = buffer.replace(/\D/g,'');
+
+            workCode=b.padStart(8,"0");
 
             updateBatch();
 
@@ -401,13 +401,18 @@ document.addEventListener("keydown", e=>{
 
         else if(mode==="start"){
 
-            currentChute=parseInt(buffer,10);
+            let s = buffer.match(/\d+/);
 
-            startChute=currentChute;
+            if(s){
 
-            updateChute();
+                currentChute=parseInt(s[0],10);
 
-            speak(currentChute + "ばんから開始します");
+                startChute=currentChute;
+
+                updateChute();
+
+                speak(currentChute + "ばんから開始します");
+            }
         }
 
         else if(isWorking){
@@ -453,10 +458,11 @@ function startWork(){
 }
 
 /* =========================
-   判定
+   判定（改善版）
 ========================= */
 function processResult(data){
 
+    // キャンセル
     if(data==="9999/999"){
 
         addLog("キャンセル","シュート"+currentChute);
@@ -470,43 +476,92 @@ function processResult(data){
         return;
     }
 
-    let max=getMaxChute();
+    // -------------------------
+    // QR解析
+    // 00667724/001d
+    // ↓
+    // batch=00667724
+    // chute=001
+    // -------------------------
 
-    let min=getMinChute();
+    let clean = data.trim();
 
-    let expected=workCode+"/"+pad(currentChute);
+    let match = clean.match(/^(\d+)\/(\d{3})/);
 
-    if(data===expected){
-
-        let isLast=(orderMode==="asc")
-            ? currentChute===max
-            : currentChute===min;
-
-        if(isLast){
-
-            speak("全シュート完了です");
-
-            nextChute();
-
-        }else{
-
-            nextChute();
-
-            speak(currentChute + "ばんです");
-        }
-
-        updateChute("ok");
-
-        addLog("OK",data);
-
-    }else{
+    if(!match){
 
         updateChute("ng");
 
         addLog("NG",data);
 
-        speak("違います " + currentChute + "ばんです");
+        speak("QRコード形式エラーです");
+
+        return;
     }
+
+    let scanBatch = match[1].padStart(8,"0");
+
+    let scanChute = match[2];
+
+    let expectedBatch = workCode.padStart(8,"0");
+
+    let expectedChute = pad(currentChute);
+
+    // -------------------------
+    // バッチ違い
+    // -------------------------
+    if(scanBatch !== expectedBatch){
+
+        updateChute("ng");
+
+        addLog("NG",data);
+
+        speak("バッチが違います");
+
+        return;
+    }
+
+    // -------------------------
+    // シュート違い
+    // -------------------------
+    if(scanChute !== expectedChute){
+
+        updateChute("ng");
+
+        addLog("NG",data);
+
+        speak("シュートが違います");
+
+        return;
+    }
+
+    // -------------------------
+    // OK
+    // -------------------------
+    let max=getMaxChute();
+
+    let min=getMinChute();
+
+    let isLast=(orderMode==="asc")
+        ? currentChute===max
+        : currentChute===min;
+
+    if(isLast){
+
+        speak("全シュート完了です");
+
+        nextChute();
+
+    }else{
+
+        nextChute();
+
+        speak(currentChute + "ばんです");
+    }
+
+    updateChute("ok");
+
+    addLog("OK",data);
 }
 
 /* =========================
