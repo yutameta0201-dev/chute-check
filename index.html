@@ -450,6 +450,10 @@ function startWork(){
     if(orderMode==="desc"){
 
         currentChute=getMaxChute();
+    }else{
+
+        // 昇順時は開始シュート維持
+        currentChute=startChute;
     }
 
     updateChute();
@@ -458,7 +462,7 @@ function startWork(){
 }
 
 /* =========================
-   判定（改善版）
+   判定
 ========================= */
 function processResult(data){
 
@@ -475,14 +479,6 @@ function processResult(data){
 
         return;
     }
-
-    // -------------------------
-    // QR解析
-    // 00667724/001d
-    // ↓
-    // batch=00667724
-    // chute=001
-    // -------------------------
 
     let clean = data.trim();
 
@@ -507,9 +503,7 @@ function processResult(data){
 
     let expectedChute = pad(currentChute);
 
-    // -------------------------
     // バッチ違い
-    // -------------------------
     if(scanBatch !== expectedBatch){
 
         updateChute("ng");
@@ -521,9 +515,7 @@ function processResult(data){
         return;
     }
 
-    // -------------------------
     // シュート違い
-    // -------------------------
     if(scanChute !== expectedChute){
 
         updateChute("ng");
@@ -535,9 +527,7 @@ function processResult(data){
         return;
     }
 
-    // -------------------------
     // OK
-    // -------------------------
     let max=getMaxChute();
 
     let min=getMinChute();
@@ -586,9 +576,8 @@ function completeBatch(){
 
     workCode=num.toString().padStart(8,"0");
 
-    currentChute=1;
-
-    startChute=1;
+    // ★開始シュートを保持
+    currentChute=startChute;
 
     isWorking=false;
 
