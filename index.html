@@ -33,12 +33,13 @@ body {
     align-items:center;
     justify-content:center;
     cursor:pointer;
-    box-shadow: 0 6px 0 rgba(0,0,0,0.3);
+    box-shadow:0 6px 0 rgba(0,0,0,0.3);
+    user-select:none;
 }
 
 .btnBox:active {
-    transform: translateY(4px);
-    box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+    transform:translateY(4px);
+    box-shadow:0 2px 0 rgba(0,0,0,0.3);
 }
 
 .activeMode {
@@ -226,11 +227,8 @@ function speak(text){
         let u = new SpeechSynthesisUtterance(text);
 
         u.lang="ja-JP";
-
         u.rate=1.15;
-
         u.pitch=1;
-
         u.volume=1;
 
         speaking=true;
@@ -245,6 +243,78 @@ function speak(text){
         console.log(e);
     }
 }
+
+/* =========================
+   長押し設定
+========================= */
+function setupLongPress(id,type){
+
+    let timer=null;
+
+    const el=document.getElementById(id);
+
+    const start=()=>{
+
+        timer=setTimeout(()=>{
+
+            if(type==="batch"){
+
+                let val=prompt("開始バッチを入力してください",workCode);
+
+                if(val!==null){
+
+                    val=val.replace(/\D/g,'');
+
+                    if(val){
+
+                        workCode=val.padStart(8,"0");
+
+                        updateBatch();
+
+                        speak("開始バッチを設定しました");
+                    }
+                }
+            }
+
+            if(type==="start"){
+
+                let val=prompt("開始シュートを入力してください",startChute);
+
+                if(val!==null){
+
+                    val=val.replace(/\D/g,'');
+
+                    if(val){
+
+                        startChute=parseInt(val,10);
+
+                        currentChute=startChute;
+
+                        updateChute();
+
+                        speak(startChute + "ばんから開始します");
+                    }
+                }
+            }
+
+        },800);
+    };
+
+    const cancel=()=>{
+
+        clearTimeout(timer);
+    };
+
+    el.addEventListener("mousedown",start);
+    el.addEventListener("touchstart",start);
+
+    el.addEventListener("mouseup",cancel);
+    el.addEventListener("mouseleave",cancel);
+    el.addEventListener("touchend",cancel);
+}
+
+setupLongPress("batchBtn","batch");
+setupLongPress("startBtnTop","start");
 
 /* =========================
    モード
@@ -389,7 +459,6 @@ document.addEventListener("keydown", e=>{
 
         if(mode==="batch"){
 
-            // 数字だけ抜く
             let b = buffer.replace(/\D/g,'');
 
             workCode=b.padStart(8,"0");
@@ -450,9 +519,9 @@ function startWork(){
     if(orderMode==="desc"){
 
         currentChute=getMaxChute();
+
     }else{
 
-        // 昇順時は開始シュート維持
         currentChute=startChute;
     }
 
@@ -466,7 +535,6 @@ function startWork(){
 ========================= */
 function processResult(data){
 
-    // キャンセル
     if(data==="9999/999"){
 
         addLog("キャンセル","シュート"+currentChute);
@@ -503,7 +571,6 @@ function processResult(data){
 
     let expectedChute = pad(currentChute);
 
-    // バッチ違い
     if(scanBatch !== expectedBatch){
 
         updateChute("ng");
@@ -515,7 +582,6 @@ function processResult(data){
         return;
     }
 
-    // シュート違い
     if(scanChute !== expectedChute){
 
         updateChute("ng");
@@ -527,7 +593,6 @@ function processResult(data){
         return;
     }
 
-    // OK
     let max=getMaxChute();
 
     let min=getMinChute();
@@ -576,7 +641,6 @@ function completeBatch(){
 
     workCode=num.toString().padStart(8,"0");
 
-    // ★開始シュートを保持
     currentChute=startChute;
 
     isWorking=false;
