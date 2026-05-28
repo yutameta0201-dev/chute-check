@@ -227,6 +227,9 @@ function speak(text){
         let u = new SpeechSynthesisUtterance(text);
 
         u.lang="ja-JP";
+        u.voice=speechsynthesis.getvoise()
+           .find(V=>v.lang.includes("jp"));
+        
         u.rate=1.15;
         u.pitch=1;
         u.volume=1;
