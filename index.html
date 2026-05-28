@@ -455,7 +455,7 @@ document.body.focus();
 
 document.addEventListener("keydown", e=>{
 
-    if(e.key==="Enter"){
+   if(e.key==="Enter"){
 
     if(mode==="batch"){
 
@@ -469,6 +469,34 @@ document.addEventListener("keydown", e=>{
 
         mode="";
     }
+
+    else if(mode==="start"){
+
+        let s = buffer.match(/\d+/);
+
+        if(s){
+
+            currentChute=parseInt(s[0],10);
+
+            startChute=currentChute;
+
+            updateChute();
+
+            speak(currentChute + "から開始します");
+        }
+
+        mode="";
+    }
+
+    else if(isWorking){
+
+        processResult(buffer);
+
+        mode="";
+    }
+
+    buffer="";
+}
 
     else if(mode==="start"){
 
