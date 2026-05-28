@@ -220,15 +220,12 @@ function speak(text){
 
     try{
 
-        if(speechSynthesis.speaking){
-            speechSynthesis.cancel();
-        }
-
-        let u = new SpeechSynthesisUtterance(text);
-
-        u.lang="ja-JP";
-        u.voice=speechsynthesis.getvoise()
-           .find(V=>v.lang.includes("jp"));
+        speechSynthesis.cancel(); 
+        let u = new SpeechSynthesisUtterance(text); 
+        u.lang="ja-JP"; 
+        let voices=speechSynthesis.getVoices();
+        let jaVoice=voices.find(v=>v.lang.includes("ja")); 
+        if(jaVoice){ u.voice=jaVoice; }
         
         u.rate=1.15;
         u.pitch=1;
@@ -295,7 +292,7 @@ function setupLongPress(id,type){
 
                         updateChute();
 
-                        speak(startChute + "ばんから開始します");
+                        speak(startChute + "から開始します");
                     }
                 }
             }
@@ -483,7 +480,7 @@ document.addEventListener("keydown", e=>{
 
                 updateChute();
 
-                speak(currentChute + "ばんから開始します");
+                speak(currentChute + "から開始します");
             }
         }
 
@@ -530,7 +527,7 @@ function startWork(){
 
     updateChute();
 
-    speak(currentChute + "ばんです");
+    speak(currentChute + "です");
 }
 
 /* =========================
@@ -542,7 +539,7 @@ function processResult(data){
 
         addLog("キャンセル","シュート"+currentChute);
 
-        speak("スキップします");
+        speak("キャンセルします");
 
         nextChute();
 
@@ -561,7 +558,7 @@ function processResult(data){
 
         addLog("NG",data);
 
-        speak("QRコード形式エラーです");
+        speak("QRコードエラーです");
 
         return;
     }
@@ -614,7 +611,7 @@ function processResult(data){
 
         nextChute();
 
-        speak(currentChute + "ばんです");
+        speak(currentChute + "です");
     }
 
     updateChute("ok");
