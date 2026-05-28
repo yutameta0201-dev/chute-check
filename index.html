@@ -457,40 +457,44 @@ document.addEventListener("keydown", e=>{
 
     if(e.key==="Enter"){
 
-        if(mode==="batch"){
+    if(mode==="batch"){
 
-            let b = buffer.replace(/\D/g,'');
+        let b = buffer.replace(/\D/g,'');
 
-            workCode=b.padStart(8,"0");
+        workCode=b.padStart(8,"0");
 
-            updateBatch();
+        updateBatch();
 
-            speak("バッチ番号 " + workCode.split('').join(' ') + " を登録しました");
-        }
+        speak("バッチ番号 " + workCode.split('').join(' ') + " を登録しました");
 
-        else if(mode==="start"){
-
-            let s = buffer.match(/\d+/);
-
-            if(s){
-
-                currentChute=parseInt(s[0],10);
-
-                startChute=currentChute;
-
-                updateChute();
-
-                speak(currentChute + "から開始します");
-            }
-        }
-
-        else if(isWorking){
-
-            processResult(buffer);
-        }
-
-        buffer="";
         mode="";
+    }
+
+    else if(mode==="start"){
+
+        let s = buffer.match(/\d+/);
+
+        if(s){
+
+            currentChute=parseInt(s[0],10);
+
+            startChute=currentChute;
+
+            updateChute();
+
+            speak(currentChute + "から開始します");
+        }
+
+        mode="";
+    }
+
+    else if(isWorking){
+
+        processResult(buffer);
+    }
+
+    buffer="";
+}
     }
     else{
 
