@@ -527,7 +527,7 @@ function startWork(){
 
     updateChute();
 
-    speak(currentChute + "ばんです");
+    speak(currentChute + "バンです");
 }
 
 /* =========================
@@ -539,7 +539,7 @@ function processResult(data){
 
         addLog("キャンセル","シュート"+currentChute);
 
-        speak("スキップします");
+        speak("キャンセルします");
 
         nextChute();
 
@@ -558,7 +558,7 @@ function processResult(data){
 
         addLog("NG",data);
 
-        speak("QRコード形式エラーです");
+        speak("QRコードエラーです");
 
         return;
     }
