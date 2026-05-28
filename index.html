@@ -220,20 +220,13 @@ function speak(text){
 
     try{
 
-        speechSynthesis.cancel();
-
-        let u = new SpeechSynthesisUtterance(text);
-
-        u.lang="ja-JP";
-
+        speechSynthesis.cancel(); 
+        let u = new SpeechSynthesisUtterance(text); 
+        u.lang="ja-JP"; 
         let voices=speechSynthesis.getVoices();
-
-        let jaVoice=voices.find(v=>v.lang.includes("ja"));
-
-        if(jaVoice){
-            u.voice=jaVoice;
-        }
-
+        let jaVoice=voices.find(v=>v.lang.includes("ja")); 
+        if(jaVoice){ u.voice=jaVoice; }
+        
         u.rate=1.15;
         u.pitch=1;
         u.volume=1;
@@ -313,9 +306,11 @@ function setupLongPress(id,type){
     };
 
     el.addEventListener("mousedown",start);
+    el.addEventListener("touchstart",start);
 
     el.addEventListener("mouseup",cancel);
     el.addEventListener("mouseleave",cancel);
+    el.addEventListener("touchend",cancel);
 }
 
 setupLongPress("batchBtn","batch");
@@ -471,8 +466,6 @@ document.addEventListener("keydown", e=>{
             updateBatch();
 
             speak("バッチ番号 " + workCode.split('').join(' ') + " を登録しました");
-
-            mode="";
         }
 
         else if(mode==="start"){
@@ -489,18 +482,15 @@ document.addEventListener("keydown", e=>{
 
                 speak(currentChute + "から開始します");
             }
-
-            mode="";
         }
 
         else if(isWorking){
 
             processResult(buffer);
-
-            mode="";
         }
 
         buffer="";
+        mode="";
     }
     else{
 
