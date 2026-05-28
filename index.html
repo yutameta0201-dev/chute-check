@@ -1,29 +1,33 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>検品アプリ（音声改善版）</title>
+<title>検品アプリ（Android改善版）</title>
 
 <style>
-body {
+
+body{
     margin:0;
     font-family:sans-serif;
     background:#f5f5f5;
+    overflow:hidden;
 }
 
-.container {
+.container{
     display:grid;
-    grid-template-rows: 160px 140px auto auto 1fr 160px;
+    grid-template-rows:160px 140px auto auto 1fr 160px;
     height:100vh;
     gap:10px;
     padding:10px;
+    box-sizing:border-box;
 }
 
-.top {
+.top{
     display:flex;
 }
 
-.btnBox {
+.btnBox{
     flex:1;
     margin:5px;
     border:3px solid black;
@@ -37,37 +41,37 @@ body {
     user-select:none;
 }
 
-.btnBox:active {
+.btnBox:active{
     transform:translateY(4px);
     box-shadow:0 2px 0 rgba(0,0,0,0.3);
 }
 
-.activeMode {
+.activeMode{
     background:#4CAF50 !important;
     color:white;
 }
 
-.asc {
+.asc{
     background:#b3e5fc !important;
 }
 
-.desc {
+.desc{
     background:#f8bbd0 !important;
 }
 
-.batch-area {
+.batch-area{
     border:3px solid black;
     background:yellow;
     padding:10px;
 }
 
-#batchBig {
-    font-size:100px;
+#batchBig{
+    font-size:90px;
     text-align:center;
     font-weight:bold;
 }
 
-#startBtn {
+#startBtn{
     width:100%;
     font-size:60px;
     padding:20px;
@@ -77,14 +81,14 @@ body {
     border-radius:10px;
 }
 
-.center {
+.center{
     border:3px solid black;
     background:white;
     display:flex;
     flex-direction:column;
 }
 
-#chuteDisplay {
+#chuteDisplay{
     flex:1;
     font-size:12vw;
     display:flex;
@@ -93,37 +97,56 @@ body {
     font-weight:bold;
 }
 
-.ok {
+.ok{
     color:green;
 }
 
-.ng {
+.ng{
     color:red;
 }
 
-.bottom {
+.bottom{
     display:flex;
 }
 
-.btn {
+.btn{
     flex:1;
     margin:10px;
     font-size:32px;
 }
 
-.complete {
+.complete{
     background:#2196F3;
     color:white;
 }
 
-.csv {
+.csv{
     background:#4CAF50;
     color:white;
 }
+
+/* Android用 hidden input */
+#scanInput{
+    position:absolute;
+    opacity:0;
+    height:1px;
+    width:1px;
+    top:0;
+    left:0;
+}
+
 </style>
 </head>
 
 <body tabindex="0">
+
+<input
+    id="scanInput"
+    type="text"
+    autocomplete="off"
+    autocorrect="off"
+    autocapitalize="off"
+    spellcheck="false">
 
 <div class="container">
 
@@ -204,14 +227,35 @@ let isWorking=false;
 let workCode="";
 let currentChute=1;
 let startChute=1;
-let buffer="";
 
 let orderMode="asc";
 let machineType=1;
 
 let csvData=[];
 
-let speaking=false;
+const scanInput=document.getElementById("scanInput");
+
+/* =========================
+   フォーカス
+========================= */
+function focusScan(){
+
+    setTimeout(()=>{
+
+        scanInput.focus();
+
+    },100);
+}
+
+document.addEventListener("click",focusScan);
+
+document.addEventListener("touchstart",()=>{
+
+    focusScan();
+
+},{passive:false});
+
+focusScan();
 
 /* =========================
    音声
@@ -220,32 +264,34 @@ function speak(text){
 
     try{
 
-        if(speechSynthesis.speaking){
-            speechSynthesis.cancel();
-        }
+        speechSynthesis.cancel();
 
         let u = new SpeechSynthesisUtterance(text);
 
         u.lang="ja-JP";
-        u.rate=1.15;
+
+        let voices=speechSynthesis.getVoices();
+
+        let jaVoice=voices.find(v=>v.lang.includes("ja"));
+
+        if(jaVoice){
+            u.voice=jaVoice;
+        }
+
+        u.rate=1.1;
         u.pitch=1;
         u.volume=1;
-
-        speaking=true;
-
-        u.onend=()=>{
-            speaking=false;
-        };
 
         speechSynthesis.speak(u);
 
     }catch(e){
+
         console.log(e);
     }
 }
 
 /* =========================
-   長押し設定
+   長押し
 ========================= */
 function setupLongPress(id,type){
 
@@ -259,7 +305,10 @@ function setupLongPress(id,type){
 
             if(type==="batch"){
 
-                let val=prompt("開始バッチを入力してください",workCode);
+                let val=prompt(
+                    "開始バッチを入力してください",
+                    workCode
+                );
 
                 if(val!==null){
 
@@ -278,7 +327,10 @@ function setupLongPress(id,type){
 
             if(type==="start"){
 
-                let val=prompt("開始シュートを入力してください",startChute);
+                let val=prompt(
+                    "開始シュートを入力してください",
+                    startChute
+                );
 
                 if(val!==null){
 
@@ -306,10 +358,19 @@ function setupLongPress(id,type){
     };
 
     el.addEventListener("mousedown",start);
-    el.addEventListener("touchstart",start);
+
+    el.addEventListener("touchstart",e=>{
+
+        e.preventDefault();
+
+        start();
+
+    },{passive:false});
 
     el.addEventListener("mouseup",cancel);
+
     el.addEventListener("mouseleave",cancel);
+
     el.addEventListener("touchend",cancel);
 }
 
@@ -334,7 +395,7 @@ function setMode(m){
         document.getElementById("batchBtn")
             .classList.add("activeMode");
 
-        speak("開始バッチのキューアールコードを読み込んでください");
+        speak("開始バッチを読み込んでください");
     }
 
     if(m==="start"){
@@ -342,8 +403,10 @@ function setMode(m){
         document.getElementById("startBtnTop")
             .classList.add("activeMode");
 
-        speak("検品を始めるシュートのキューアールコードを読み込んでください");
+        speak("開始シュートを読み込んでください");
     }
+
+    focusScan();
 }
 
 /* =========================
@@ -375,6 +438,8 @@ function toggleOrder(){
 
         speak("昇順モードです");
     }
+
+    focusScan();
 }
 
 /* =========================
@@ -402,6 +467,8 @@ function setMachine(m){
     }
 
     speak(m + "号機モードです");
+
+    focusScan();
 }
 
 /* =========================
@@ -449,13 +516,13 @@ function nextChute(){
 }
 
 /* =========================
-   キーボード入力
+   スキャン処理
 ========================= */
-document.body.focus();
-
-document.addEventListener("keydown", e=>{
+scanInput.addEventListener("keydown",e=>{
 
     if(e.key==="Enter"){
+
+        let buffer=scanInput.value.trim();
 
         if(mode==="batch"){
 
@@ -465,7 +532,10 @@ document.addEventListener("keydown", e=>{
 
             updateBatch();
 
-            speak("バッチ " + workCode + " を登録しました");
+            speak(
+                "バッチ番号 " +
+                workCode.split('').join(' ')
+            );
         }
 
         else if(mode==="start"){
@@ -489,12 +559,11 @@ document.addEventListener("keydown", e=>{
             processResult(buffer);
         }
 
-        buffer="";
         mode="";
-    }
-    else{
 
-        buffer+=e.key;
+        scanInput.value="";
+
+        focusScan();
     }
 });
 
@@ -527,7 +596,9 @@ function startWork(){
 
     updateChute();
 
-    speak(currentChute + "バンです");
+    speak(currentChute + "ばんです");
+
+    focusScan();
 }
 
 /* =========================
@@ -548,9 +619,9 @@ function processResult(data){
         return;
     }
 
-    let clean = data.trim();
+    let clean=data.trim();
 
-    let match = clean.match(/^(\d+)\/(\d{3})/);
+    let match=clean.match(/^(\d+)\/(\d{3})/);
 
     if(!match){
 
@@ -563,13 +634,13 @@ function processResult(data){
         return;
     }
 
-    let scanBatch = match[1].padStart(8,"0");
+    let scanBatch=match[1].padStart(8,"0");
 
-    let scanChute = match[2];
+    let scanChute=match[2];
 
-    let expectedBatch = workCode.padStart(8,"0");
+    let expectedBatch=workCode.padStart(8,"0");
 
-    let expectedChute = pad(currentChute);
+    let expectedChute=pad(currentChute);
 
     if(scanBatch !== expectedBatch){
 
@@ -634,7 +705,9 @@ function completeBatch(){
 
     if(!finished){
 
-        if(!confirm("最終シュートまで確認していません。次に進みますか？")) return;
+        if(!confirm(
+            "最終シュートまで確認していません。次に進みますか？"
+        )) return;
     }
 
     let num=parseInt(workCode,10)+1;
@@ -650,6 +723,8 @@ function completeBatch(){
     updateChute();
 
     speak("次のバッチへ進みます");
+
+    focusScan();
 }
 
 /* =========================
@@ -706,7 +781,7 @@ function downloadCSV(){
 
     a.click();
 
-    speak("シーエスブイを出力しました");
+    speak("CSVを出力しました");
 }
 
 /* =========================
@@ -736,3 +811,4 @@ function pad(n){
 
 </body>
 </html>
+```
