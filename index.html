@@ -220,13 +220,20 @@ function speak(text){
 
     try{
 
-        speechSynthesis.cancel(); 
-        let u = new SpeechSynthesisUtterance(text); 
-        u.lang="ja-JP"; 
+        speechSynthesis.cancel();
+
+        let u = new SpeechSynthesisUtterance(text);
+
+        u.lang="ja-JP";
+
         let voices=speechSynthesis.getVoices();
-        let jaVoice=voices.find(v=>v.lang.includes("ja")); 
-        if(jaVoice){ u.voice=jaVoice; }
-        
+
+        let jaVoice=voices.find(v=>v.lang.includes("ja"));
+
+        if(jaVoice){
+            u.voice=jaVoice;
+        }
+
         u.rate=1.15;
         u.pitch=1;
         u.volume=1;
@@ -306,11 +313,9 @@ function setupLongPress(id,type){
     };
 
     el.addEventListener("mousedown",start);
-    el.addEventListener("touchstart",start);
 
     el.addEventListener("mouseup",cancel);
     el.addEventListener("mouseleave",cancel);
-    el.addEventListener("touchend",cancel);
 }
 
 setupLongPress("batchBtn","batch");
@@ -455,74 +460,47 @@ document.body.focus();
 
 document.addEventListener("keydown", e=>{
 
-   if(e.key==="Enter"){
+    if(e.key==="Enter"){
 
-    if(mode==="batch"){
+        if(mode==="batch"){
 
-        let b = buffer.replace(/\D/g,'');
+            let b = buffer.replace(/\D/g,'');
 
-        workCode=b.padStart(8,"0");
+            workCode=b.padStart(8,"0");
 
-        updateBatch();
+            updateBatch();
 
-        speak("バッチ番号 " + workCode.split('').join(' ') + " を登録しました");
+            speak("バッチ番号 " + workCode.split('').join(' ') + " を登録しました");
 
-        mode="";
-    }
-
-    else if(mode==="start"){
-
-        let s = buffer.match(/\d+/);
-
-        if(s){
-
-            currentChute=parseInt(s[0],10);
-
-            startChute=currentChute;
-
-            updateChute();
-
-            speak(currentChute + "から開始します");
+            mode="";
         }
 
-        mode="";
-    }
+        else if(mode==="start"){
 
-    else if(isWorking){
+            let s = buffer.match(/\d+/);
 
-        processResult(buffer);
+            if(s){
 
-        mode="";
-    }
+                currentChute=parseInt(s[0],10);
 
-    buffer="";
-}
+                startChute=currentChute;
 
-    else if(mode==="start"){
+                updateChute();
 
-        let s = buffer.match(/\d+/);
+                speak(currentChute + "から開始します");
+            }
 
-        if(s){
-
-            currentChute=parseInt(s[0],10);
-
-            startChute=currentChute;
-
-            updateChute();
-
-            speak(currentChute + "から開始します");
+            mode="";
         }
 
-        mode="";
-    }
+        else if(isWorking){
 
-    else if(isWorking){
+            processResult(buffer);
 
-        processResult(buffer);
-    }
+            mode="";
+        }
 
-    buffer="";
-}
+        buffer="";
     }
     else{
 
