@@ -271,7 +271,13 @@ function setupLongPress(id,type){
 
                         updateBatch();
 
+                        mode="";
+                        buffer="";
+
                         speak("開始バッチを設定しました");
+
+                        setimeout(()=>{
+                            document.body.focus();},100);
                     }
                 }
             }
@@ -291,8 +297,13 @@ function setupLongPress(id,type){
                         currentChute=startChute;
 
                         updateChute();
+                        mode="";
+                        buffer="";
 
                         speak(startChute + "から開始します");
+                        setTimeout(()=>{
+                         document.body.focus();
+                        },100);
                     }
                 }
             }
@@ -491,6 +502,8 @@ document.addEventListener("keydown", e=>{
 
         buffer="";
         mode="";
+
+        document.body.focus();
     }
     else{
 
@@ -502,7 +515,10 @@ document.addEventListener("keydown", e=>{
    作業開始
 ========================= */
 function startWork(){
-
+    
+    mode="";
+    buffer="";
+    
     if(!workCode){
 
         alert("バッチ未設定");
@@ -624,6 +640,9 @@ function processResult(data){
 ========================= */
 function completeBatch(){
 
+　　 mode="";
+    buffer="";
+    
     let max=getMaxChute();
 
     let min=getMinChute();
