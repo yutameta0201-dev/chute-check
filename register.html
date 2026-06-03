@@ -21,21 +21,24 @@ button{cursor:pointer}
 
 <h2>DPS棚番登録アプリ</h2>
 
-<div class="zoneGrid" id="zones"></div>
-
 <div class="info">
-<div>選択ゾーン</div>
-<div id="zone" class="big">未選択</div>
-</div>
-
-<div class="info">
-<div>現在棚番</div>
-<div id="rack" class="big">---</div>
+<div>商品コード</div>
+<div id="itemCode" class="big">---</div>
 </div>
 
 <div class="info">
 <div>商品名</div>
 <div id="itemName" class="big">---</div>
+</div>
+
+<div class="info">
+<div>現在棚番</div>
+<div id="currentRack" class="big">---</div>
+</div>
+
+<div class="info">
+<div>登録棚番</div>
+<div id="newRack" class="big">---</div>
 </div>
 
 <div class="info">
@@ -53,34 +56,23 @@ button{cursor:pointer}
 <div id="history"></div>
 
 <script>
-const zones=[1,2,3,4,5,6,60,70,80];
-const colors={1:"#2196F3",2:"#000000",3:"#4CAF50",4:"#9C27B0",5:"#FF9800",6:"#FFD600",60:"#81D4FA",70:"#F48FB1",80:"#F44336"};
+let currentItem=null;
 
-let selectedZone="";
+function convertProduct(scan){
+
+    let code=scan.replace(/^0+/,"");
+
+    code=code.slice(0,-1);
+
+    return code;
+}
+ 
 let currentRack="";
 let buffer="";
 let master={};
 let logs=[];
 
 const zoneArea=document.getElementById("zones");
-
-zones.forEach(z=>{
- const b=document.createElement("button");
- b.className="zoneBtn";
- b.innerText=z;
- b.style.background=colors[z];
- b.style.color=(z==2?"#fff":"#000");
- b.onclick=()=>selectZone(z,b);
- zoneArea.appendChild(b);
-});
-
-function selectZone(z,btn){
- selectedZone=z;
- document.querySelectorAll(".zoneBtn").forEach(x=>x.classList.remove("active"));
- btn.classList.add("active");
- document.getElementById("zone").innerText=z;
- speak(z+"ゾーン");
-}
 
 function speak(t){
  try{
@@ -101,10 +93,16 @@ document.getElementById("masterFile").addEventListener("change",e=>{
    for(let i=1;i<lines.length;i++){
       const c=lines[i].split(",");
       if(c.length>=2){
-         master[c[0].trim()]=c[1].trim();
-      }
-   }
-   document.getElementById("masterCount").innerText=Object.keys(master).length;
+         master[c[0].trim()]={
+
+    name:c[1].trim(),
+
+    rack:
+        c[2].trim()+"-"+
+        c[3].trim()+"-"+
+        c[4].trim()
+};
+    document.getElementById("masterCount").innerText=Object.keys(master).length;
    speak("商品マスタを読み込みました");
  };
  r.readAsText(file,"utf-8");
@@ -125,41 +123,54 @@ document.addEventListener("keydown",e=>{
  }
 });
 
-function processScan(code){
+function processScan(scan){
 
- if(!code)return;
+    if(!scan) return;
 
- if(code.includes("-")){
-    currentRack=code;
-    document.getElementById("rack").innerText=code;
-    speak("棚番セット");
-    return;
- }
+    if(scan.includes("-")){
 
- if(!selectedZone){
-    speak("ゾーンを選択してください");
-    return;
- }
+        registerRack(scan);
 
- if(!currentRack){
-    speak("棚番を読んでください");
-    return;
- }
+        return;
+    }
 
- const itemName=master[code] || "マスタ未登録";
- document.getElementById("itemName").innerText=itemName;
+    let code=convertProduct(scan);
 
- if(itemName==="マスタ未登録"){
-   speak("マスタ未登録");
-   return;
- }
+    let item=master[code];
 
- const dup=logs.find(x=>x.zone==selectedZone && x.rack==currentRack && x.jan==code);
+    if(!item){
 
- if(dup){
-   speak("重複登録です");
-   return;
- }
+        document.getElementById("itemName")
+            .innerText="マスタ未登録";
+
+        speak("マスタ未登録");
+
+        return;
+    }
+
+    currentItem={
+
+        code:code,
+
+        name:item.name,
+
+        currentRack:item.rack
+    };
+
+    document.getElementById("itemCode")
+        .innerText=code;
+
+    document.getElementById("itemName")
+        .innerText=item.name;
+
+    document.getElementById("currentRack")
+        .innerText=item.rack;
+
+    document.getElementById("newRack")
+        .innerText="---";
+
+    speak(item.name);
+}
 
  const now=new Date().toLocaleString();
 
@@ -186,10 +197,10 @@ function downloadCSV(){
    return;
  }
 
- let csv="日時,ゾーン,棚番,JAN,商品名\n";
+ let csv="日時,商品コード,商品名,現在棚番,登録棚番\n";
 
  logs.forEach(r=>{
-   csv+=`${r.time},${r.zone},${r.rack},${r.jan},${r.name}\n`;
+  csv+=`${r.time},${r.code},${r.name},${r.currentRack},${r.newRack}\n`;
  });
 
  const blob=new Blob(["\uFEFF"+csv],{type:"text/csv"});
@@ -198,6 +209,68 @@ function downloadCSV(){
  a.download="DPS登録.csv";
  a.click();
 }
+function registerRack(rack){
+
+    if(!currentItem){
+
+        speak("先に商品を読んでください");
+
+        return;
+    }
+
+    let dup=logs.find(x=>
+
+        x.code===currentItem.code &&
+
+        x.newRack===rack
+    );
+
+    if(dup){
+
+        speak("重複登録です");
+
+        return;
+    }
+
+    document.getElementById("newRack")
+        .innerText=rack;
+
+    let now=new Date().toLocaleString();
+
+    logs.push({
+
+        time:now,
+
+        code:currentItem.code,
+
+        name:currentItem.name,
+
+        currentRack:currentItem.currentRack,
+
+        newRack:rack
+    });
+
+    document.getElementById("count")
+        .innerText=logs.length;
+
+    let h=document.getElementById("history");
+
+    h.innerHTML=
+        "<div>"+
+        currentItem.code+" "+
+        currentItem.name+
+        " "+
+        currentItem.currentRack+
+        " → "+
+        rack+
+        "</div>"
+        +h.innerHTML;
+
+    speak("登録しました");
+
+    currentItem=null;
+}
+ 
 </script>
 </body>
 </html>
