@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DPS棚番登録アプリ</title>
+<style>
+body{font-family:sans-serif;margin:0;background:#f5f5f5;padding:10px}
+.zoneGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.zoneBtn{font-size:28px;padding:15px;border:none;border-radius:8px}
+.active{outline:4px solid #000}
+.info{background:#fff;border:2px solid #333;margin-top:10px;padding:10px}
+.big{font-size:32px;font-weight:bold}
+#history{height:250px;overflow:auto;background:#fff;border:2px solid #333;padding:5px}
+button{cursor:pointer}
+.tools{display:flex;gap:8px;margin-top:10px}
+.tools button{flex:1;padding:12px;font-size:18px}
+</style>
+</head>
+<body tabindex="0">
+
+<h2>DPS棚番登録アプリ</h2>
+
+<div class="zoneGrid" id="zones"></div>
+
+<div class="info">
+<div>選択ゾーン</div>
+<div id="zone" class="big">未選択</div>
+</div>
+
+<div class="info">
+<div>現在棚番</div>
+<div id="rack" class="big">---</div>
+</div>
+
+<div class="info">
+<div>商品名</div>
+<div id="itemName" class="big">---</div>
+</div>
+
+<div class="info">
+登録件数：<span id="count">0</span><br>
+商品マスタ件数：<span id="masterCount">0</span>
+</div>
+
+<div class="tools">
+<input type="file" id="masterFile" accept=".csv">
+<button onclick="clearRack()">棚クリア</button>
+<button onclick="downloadCSV()">CSV出力</button>
+</div>
+
+<h3>履歴</h3>
+<div id="history"></div>
+
+<script>
+const zones=[1,2,3,4,5,6,60,70,80];
+const colors={1:"#2196F3",2:"#000000",3:"#4CAF50",4:"#9C27B0",5:"#FF9800",6:"#FFD600",60:"#81D4FA",70:"#F48FB1",80:"#F44336"};
+
+let selectedZone="";
+let currentRack="";
+let buffer="";
+let master={};
+let logs=[];
+
+const zoneArea=document.getElementById("zones");
+
+zones.forEach(z=>{
+ const b=document.createElement("button");
+ b.className="zoneBtn";
+ b.innerText=z;
+ b.style.background=colors[z];
+ b.style.color=(z==2?"#fff":"#000");
+ b.onclick=()=>selectZone(z,b);
+ zoneArea.appendChild(b);
+});
+
+function selectZone(z,btn){
+ selectedZone=z;
+ document.querySelectorAll(".zoneBtn").forEach(x=>x.classList.remove("active"));
+ btn.classList.add("active");
+ document.getElementById("zone").innerText=z;
+ speak(z+"ゾーン");
+}
+
+function speak(t){
+ try{
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(t);
+  u.lang="ja-JP";
+  speechSynthesis.speak(u);
+ }catch(e){}
+}
+
+document.getElementById("masterFile").addEventListener("change",e=>{
+ const file=e.target.files[0];
+ if(!file)return;
+ const r=new FileReader();
+ r.onload=function(){
+   master={};
+   const lines=r.result.split(/\r?\n/);
+   for(let i=1;i<lines.length;i++){
+      const c=lines[i].split(",");
+      if(c.length>=2){
+         master[c[0].trim()]=c[1].trim();
+      }
+   }
+   document.getElementById("masterCount").innerText=Object.keys(master).length;
+   speak("商品マスタを読み込みました");
+ };
+ r.readAsText(file,"utf-8");
+});
+
+function clearRack(){
+ currentRack="";
+ document.getElementById("rack").innerText="---";
+ speak("棚番クリア");
+}
+
+document.addEventListener("keydown",e=>{
+ if(e.key==="Enter"){
+   processScan(buffer.trim());
+   buffer="";
+ }else{
+   buffer+=e.key;
+ }
+});
+
+function processScan(code){
+
+ if(!code)return;
+
+ if(code.includes("-")){
+    currentRack=code;
+    document.getElementById("rack").innerText=code;
+    speak("棚番セット");
+    return;
+ }
+
+ if(!selectedZone){
+    speak("ゾーンを選択してください");
+    return;
+ }
+
+ if(!currentRack){
+    speak("棚番を読んでください");
+    return;
+ }
+
+ const itemName=master[code] || "マスタ未登録";
+ document.getElementById("itemName").innerText=itemName;
+
+ if(itemName==="マスタ未登録"){
+   speak("マスタ未登録");
+   return;
+ }
+
+ const dup=logs.find(x=>x.zone==selectedZone && x.rack==currentRack && x.jan==code);
+
+ if(dup){
+   speak("重複登録です");
+   return;
+ }
+
+ const now=new Date().toLocaleString();
+
+ logs.push({
+   time:now,
+   zone:selectedZone,
+   rack:currentRack,
+   jan:code,
+   name:itemName
+ });
+
+ document.getElementById("count").innerText=logs.length;
+
+ const h=document.getElementById("history");
+ h.innerHTML="<div>"+now+" / "+selectedZone+" / "+currentRack+" / "+itemName+"</div>"+h.innerHTML;
+
+ speak("登録しました");
+}
+
+function downloadCSV(){
+
+ if(logs.length===0){
+   alert("データなし");
+   return;
+ }
+
+ let csv="日時,ゾーン,棚番,JAN,商品名\n";
+
+ logs.forEach(r=>{
+   csv+=`${r.time},${r.zone},${r.rack},${r.jan},${r.name}\n`;
+ });
+
+ const blob=new Blob(["\uFEFF"+csv],{type:"text/csv"});
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download="DPS登録.csv";
+ a.click();
+}
+</script>
+</body>
+</html>
