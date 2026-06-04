@@ -72,8 +72,6 @@ let buffer="";
 let master={};
 let logs=[];
 
-const zoneArea=document.getElementById("zones");
-
 function speak(t){
  try{
   speechSynthesis.cancel();
@@ -102,25 +100,69 @@ document.getElementById("masterFile").addEventListener("change",e=>{
         c[3].trim()+"-"+
         c[4].trim()
 };
-    document.getElementById("masterCount").innerText=Object.keys(master).length;
+    document.getElementById("masterFile").addEventListener("change",e=>{
+
+ const file=e.target.files[0];
+
+ if(!file)return;
+
+ const r=new FileReader();
+
+ r.onload=function(){
+
+   master={};
+
+   const lines=r.result.split(/\r?\n/);
+
+   for(let i=1;i<lines.length;i++){
+
+      const c=lines[i].split(",");
+
+      if(c.length>=5){
+
+         master[c[0].trim()]={
+
+            name:c[1].trim(),
+
+            rack:
+               c[2].trim()+"-"+
+               c[3].trim()+"-"+
+               c[4].trim()
+
+         };
+      }
+   }
+
+   document.getElementById("masterCount").innerText=
+      Object.keys(master).length;
+
    speak("商品マスタを読み込みました");
  };
+
  r.readAsText(file,"utf-8");
 });
 
 function clearRack(){
  currentRack="";
- document.getElementById("rack").innerText="---";
+ document.getElementById("newRack").innerText="---";
  speak("棚番クリア");
 }
 
 document.addEventListener("keydown",e=>{
- if(e.key==="Enter"){
-   processScan(buffer.trim());
-   buffer="";
- }else{
-   buffer+=e.key;
- }
+
+    if(e.key==="Enter" || e.code==="NumpadEnter"){
+
+        processScan(buffer.trim());
+
+        buffer="";
+
+        return;
+    }
+
+    if(e.key.length===1){
+
+        buffer += e.key;
+    }
 });
 
 function processScan(scan){
@@ -170,24 +212,6 @@ function processScan(scan){
         .innerText="---";
 
     speak(item.name);
-}
-
- const now=new Date().toLocaleString();
-
- logs.push({
-   time:now,
-   zone:selectedZone,
-   rack:currentRack,
-   jan:code,
-   name:itemName
- });
-
- document.getElementById("count").innerText=logs.length;
-
- const h=document.getElementById("history");
- h.innerHTML="<div>"+now+" / "+selectedZone+" / "+currentRack+" / "+itemName+"</div>"+h.innerHTML;
-
- speak("登録しました");
 }
 
 function downloadCSV(){
