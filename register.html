@@ -246,8 +246,9 @@ function downloadCSV(){
  let csv="日時,商品コード,商品名,現在棚番,登録棚番\n";
 
  logs.forEach(r=>{
- csv+=`${r.time},${r.code},${r.name},"${r.currentRack}","${r.newRack}"\n`;
- });
+logs.forEach(r=>{
+  csv+=`${r.time},${r.code},${r.name},"=""${r.currentRack}""","=""${r.newRack}"""\n`;
+});
 
  const blob=new Blob(["\uFEFF"+csv],{type:"text/csv"});
  const a=document.createElement("a");
