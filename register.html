@@ -247,7 +247,7 @@ function downloadCSV(){
 
  
 logs.forEach(r=>{
-  csv+=`${r.time},${r.code},${r.name},"=""${r.currentRack}""","=""${r.newRack}"""\n`;
+  csv+=`${r.time},${r.code},${r.name},="${r.currentRack}",="${r.newRack}"\n`;
 });
 
  const blob=new Blob(["\uFEFF"+csv],{type:"text/csv"});
