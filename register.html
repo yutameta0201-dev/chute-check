@@ -72,6 +72,16 @@ let buffer="";
 let master={};
 let logs=[];
 
+const savedMaster=localStorage.getItem("dpsMaster");
+
+if(savedMaster){
+
+    master=JSON.parse(savedMaster);
+
+    document.getElementById("masterCount").innerText=
+        Object.keys(master).length;
+}
+
 function speak(t){
  try{
   speechSynthesis.cancel();
@@ -114,56 +124,20 @@ document.getElementById("masterFile").addEventListener("change",e=>{
       }
    }
 
-   document.getElementById("masterCount").innerText=
+  document.getElementById("masterCount").innerText=
       Object.keys(master).length;
 
-   speak("商品マスタを読み込みました");
+localStorage.setItem(
+    "dpsMaster",
+    JSON.stringify(master)
+);
+
+speak("商品マスタを読み込みました");
  };
 
  r.readAsText(file,"utf-8");
 });
-    document.getElementById("masterFile").addEventListener("change",e=>{
-
- const file=e.target.files[0];
-
- if(!file)return;
-
- const r=new FileReader();
-
- r.onload=function(){
-
-   master={};
-
-   const lines=r.result.split(/\r?\n/);
-
-   for(let i=1;i<lines.length;i++){
-
-      const c=lines[i].split(",");
-
-      if(c.length>=5){
-
-         master[c[0].trim()]={
-
-            name:c[1].trim(),
-
-            rack:
-               c[2].trim()+"-"+
-               c[3].trim()+"-"+
-               c[4].trim()
-
-         };
-      }
-   }
-
-   document.getElementById("masterCount").innerText=
-      Object.keys(master).length;
-
-   speak("商品マスタを読み込みました");
- };
-
- r.readAsText(file,"utf-8");
-});
-
+   
 function clearRack(){
  currentRack="";
  document.getElementById("newRack").innerText="---";
@@ -254,7 +228,17 @@ logs.forEach(r=>{
  const a=document.createElement("a");
  a.href=URL.createObjectURL(blob);
  a.download="DPS登録.csv";
- a.click();
+a.click();
+
+logs=[];
+
+localStorage.removeItem("dpsLogs");
+
+document.getElementById("count").innerText="0";
+
+document.getElementById("history").innerHTML="";
+
+speak("出力完了");
 }
 function registerRack(rack){
 
@@ -296,6 +280,10 @@ function registerRack(rack){
 
         newRack:rack
     });
+    localStorage.setItem(
+    "dpsLogs",
+    JSON.stringify(logs)
+);
 
     document.getElementById("count")
         .innerText=logs.length;
