@@ -130,6 +130,8 @@ document.getElementById("masterFile").addEventListener("change",e=>{
        c[5].trim()+"-"+
        c[6].trim()+"-"+
        c[7].trim()
+
+     jan:c[9] ? c[9].trim() : ""
 };
       }
    }
@@ -185,6 +187,13 @@ function processScan(scan){
     let code=convertProduct(scan);
 
     let item=master[code];
+
+    if(!item){
+
+    item=Object.values(master).find(
+        x => x.jan === scan
+    );
+}
 
     if(!item){
 
