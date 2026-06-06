@@ -196,14 +196,16 @@ function processScan(scan){
         return;
     }
 
-    currentItem={
+   currentItem={
 
-        code:code,
+    code:code,
 
-        name:item.name,
+    name:item.name,
 
-        currentRack:item.rack
-    };
+    currentRack:item.rack,
+
+    oldRack:item.oldRack
+};
 
     document.getElementById("itemCode")
         .innerText=code;
