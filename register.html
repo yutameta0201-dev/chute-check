@@ -186,26 +186,7 @@ function processScan(scan){
 
     let code=convertProduct(scan);
 
-    let item=master[code];
-
-    if(!item){
-
-    item=Object.values(master).find(
-        x => x.jan === scan
-    );
-}
-
-    if(!item){
-
-        document.getElementById("itemName")
-            .innerText="マスタ未登録";
-
-        speak("マスタ未登録");
-
-        return;
-    }
-
-  let code=convertProduct(scan);
+    let code=convertProduct(scan);
 
 let item=master[code];
 
