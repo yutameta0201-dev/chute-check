@@ -184,17 +184,6 @@ function processScan(scan){
         return;
     }
 
-function processScan(scan){
-
-    if(!scan) return;
-
-    if(scan.includes("-")){
-
-        registerRack(scan);
-
-        return;
-    }
-
     let code=convertProduct(scan);
 
     let item=master[code];
