@@ -205,16 +205,22 @@ function processScan(scan){
         return;
     }
 
-   currentItem={
+  let code=convertProduct(scan);
 
-    code:code,
+let item=master[code];
 
-    name:item.name,
+if(!item){
 
-    currentRack:item.rack,
+    let foundCode = Object.keys(master).find(
+        k => master[k].jan === scan
+    );
 
-    oldRack:item.oldRack
-};
+    if(foundCode){
+
+        code = foundCode;
+        item = master[foundCode];
+    }
+}
 
     document.getElementById("itemCode")
         .innerText=code;
