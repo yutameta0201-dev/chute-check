@@ -184,24 +184,54 @@ function processScan(scan){
         return;
     }
 
-    let code=convertProduct(scan);
+function processScan(scan){
 
-    let code=convertProduct(scan);
+    if(!scan) return;
 
-let item=master[code];
+    if(scan.includes("-")){
 
-if(!item){
+        registerRack(scan);
 
-    let foundCode = Object.keys(master).find(
-        k => master[k].jan === scan
-    );
-
-    if(foundCode){
-
-        code = foundCode;
-        item = master[foundCode];
+        return;
     }
-}
+
+    let code=convertProduct(scan);
+
+    let item=master[code];
+
+    if(!item){
+
+        let foundCode = Object.keys(master).find(
+            k => master[k].jan === scan
+        );
+
+        if(foundCode){
+
+            code = foundCode;
+            item = master[foundCode];
+        }
+    }
+
+    if(!item){
+
+        document.getElementById("itemName")
+            .innerText="マスタ未登録";
+
+        speak("マスタ未登録");
+
+        return;
+    }
+
+    currentItem={
+
+        code:code,
+
+        name:item.name,
+
+        currentRack:item.rack,
+
+        oldRack:item.oldRack
+    };
 
     document.getElementById("itemCode")
         .innerText=code;
@@ -210,13 +240,13 @@ if(!item){
         .innerText=item.name;
 
     document.getElementById("currentRack")
-    .innerText=item.rack;
+        .innerText=item.rack;
 
-document.getElementById("oldRack")
-    .innerText=item.oldRack || "---";
+    document.getElementById("oldRack")
+        .innerText=item.oldRack || "---";
 
-document.getElementById("newRack")
-    .innerText="---";
+    document.getElementById("newRack")
+        .innerText="---";
 
     speak(item.name);
 }
