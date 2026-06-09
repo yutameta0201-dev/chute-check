@@ -61,6 +61,23 @@ button{cursor:pointer}
 <h3>履歴</h3>
 <div id="history"></div>
 
+<div class="info">
+<div>入庫予定</div>
+<div id="planQty" class="big">0</div>
+</div>
+
+<div class="info">
+<div>入庫実績</div>
+<div id="actualQty" class="big">0</div>
+</div>
+
+<div class="info">
+<div>残数</div>
+<div id="remainQty" class="big">0</div>
+</div>
+
+<input type="file" id="inboundFile" accept=".csv">
+    
 <script>
 let currentItem=null;
 
@@ -77,6 +94,9 @@ let currentRack="";
 let buffer="";
 let master={};
 let logs=[];
+
+let inboundData={};
+let actualData={};
 
 const savedMaster=localStorage.getItem("dpsMaster");
 
@@ -149,6 +169,42 @@ speak("商品マスタを読み込みました");
 
  r.readAsText(file,"utf-8");
 });
+
+document.getElementById("inboundFile").addEventListener("change",e=>{
+
+ const file=e.target.files[0];
+ if(!file)return;
+
+ const r=new FileReader();
+
+ r.onload=function(){
+
+   inboundData={};
+
+   const lines=r.result.split(/\r?\n/);
+
+   for(let i=1;i<lines.length;i++){
+
+      const c=lines[i].split(",");
+
+      if(c.length<11) continue;
+
+      const code=c[7].trim().replace(/^0+/,"");
+      const qty=parseInt(c[10])||0;
+      const name=c[8].trim();
+
+      inboundData[code]={
+         name:name,
+         qty:qty
+      };
+   }
+
+   speak("入庫データを読み込みました");
+ };
+
+ r.readAsText(file,"utf-8");
+});
+
    
 function clearRack(){
  currentRack="";
@@ -176,6 +232,36 @@ document.addEventListener("keydown",e=>{
 function processScan(scan){
 
     if(!scan) return;
+
+        if(scan==="ADD1"){
+        addQty(1);
+        return;
+    }
+
+    if(scan==="ADD5"){
+        addQty(5);
+        return;
+    }
+
+    if(scan==="ADD10"){
+        addQty(10);
+        return;
+    }
+
+    if(scan==="SUB1"){
+        addQty(-1);
+        return;
+    }
+
+    if(scan==="SUB5"){
+        addQty(-5);
+        return;
+    }
+
+    if(scan==="SUB10"){
+        addQty(-10);
+        return;
+    }
 
     if(scan.includes("-")){
 
@@ -221,6 +307,16 @@ function processScan(scan){
 
         oldRack:item.oldRack
     };
+    let plan=0;
+let actual=actualData[code]||0;
+
+if(inboundData[code]){
+    plan=inboundData[code].qty;
+}
+
+document.getElementById("planQty").innerText=plan;
+document.getElementById("actualQty").innerText=actual;
+document.getElementById("remainQty").innerText=plan-actual;
 
     document.getElementById("itemCode")
         .innerText=code;
@@ -270,6 +366,57 @@ document.getElementById("history").innerHTML="";
 
 speak("出力完了");
 }
+
+function addQty(q){
+
+    if(!currentItem){
+
+        speak("商品を読んでください");
+
+        return;
+    }
+
+    let code=currentItem.code;
+
+    if(!actualData[code]){
+        actualData[code]=0;
+    }
+
+    actualData[code]+=q;
+
+    if(actualData[code]<0){
+        actualData[code]=0;
+    }
+
+    let plan=0;
+
+    if(inboundData[code]){
+        plan=inboundData[code].qty;
+    }
+
+    let remain=plan-actualData[code];
+
+    document.getElementById("actualQty").innerText=
+        actualData[code];
+
+    document.getElementById("remainQty").innerText=
+        remain;
+
+    if(remain===0){
+
+        speak("完了");
+
+    }else if(remain<0){
+
+        speak("超過");
+
+    }else{
+
+        speak(actualData[code].toString());
+    }
+}
+
+    
 function registerRack(rack){
 
     if(!currentItem){
