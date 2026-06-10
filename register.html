@@ -153,7 +153,7 @@ document.getElementById("masterFile").addEventListener("change",e=>{
 
       const c=lines[i].split(",");
 
-　　　　if(c.length>=10){
+if(c.length>=10){
        
           master[c[0].trim()]={
 
@@ -372,6 +372,7 @@ document.getElementById("remainQty").innerText=plan-actual;
         .innerText="---";
 
     speak(item.name);
+}
 }
 
 function downloadCSV(){
