@@ -109,7 +109,12 @@ let master={};
 let logs=[];
 
 let inboundData={};
-let actualData={};
+let actualData=
+JSON.parse(
+    localStorage.getItem("dpsActual") || "{}"
+);
+
+let lastScanCode="";    
 
 const savedMaster=localStorage.getItem("dpsMaster");
 
@@ -320,6 +325,26 @@ function processScan(scan){
 
         oldRack:item.oldRack
     };
+
+    if(localStorage.getItem("dpsMode")==="inbound"){
+
+    if(!actualData[code]){
+        actualData[code]=0;
+    }
+
+
+    if(lastScanCode!==code){
+        
+    actualData[code]++;
+
+    localStorage.setItem(
+        "dpsActual",
+        JSON.stringify(actualData)
+    );
+}
+
+lastScanCode=code;
+        
     let plan=0;
 let actual=actualData[code]||0;
 
@@ -389,31 +414,36 @@ function addQty(q){
         return;
     }
 
-    let code=currentItem.code;
+  let code=currentItem.code;
 
-    if(!actualData[code]){
-        actualData[code]=0;
-    }
+if(!actualData[code]){
+    actualData[code]=0;
+}
 
-    actualData[code]+=q;
+actualData[code]+=q;
 
-    if(actualData[code]<0){
-        actualData[code]=0;
-    }
+if(actualData[code]<0){
+    actualData[code]=0;
+}
 
-    let plan=0;
+localStorage.setItem(
+    "dpsActual",
+    JSON.stringify(actualData)
+);
 
-    if(inboundData[code]){
-        plan=inboundData[code].qty;
-    }
+let plan=0;
 
-    let remain=plan-actualData[code];
+if(inboundData[code]){
+    plan=inboundData[code].qty;
+}
 
-    document.getElementById("actualQty").innerText=
-        actualData[code];
+let remain=plan-actualData[code];
 
-    document.getElementById("remainQty").innerText=
-        remain;
+document.getElementById("actualQty").innerText=
+    actualData[code];
+
+document.getElementById("remainQty").innerText=
+    remain;
 
     if(remain===0){
 
