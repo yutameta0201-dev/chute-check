@@ -21,7 +21,14 @@ button{cursor:pointer}
 <body tabindex="0">
 
 <h2>DPS棚番登録アプリ</h2>
+    
+<div class="tools">
+    <button onclick="showMode('rack')">棚番登録</button>
+    <button onclick="showMode('inbound')">入庫チェック</button>
+</div>
 
+<div id="rackMode">
+    
 <div class="info">
 <div>商品コード</div>
 <div id="itemCode" class="big">---</div>
@@ -61,6 +68,10 @@ button{cursor:pointer}
 <h3>履歴</h3>
 <div id="history"></div>
 
+</div>
+
+<div id="inboundMode" style="display:none">
+    
 <div class="info">
 <div>入庫予定</div>
 <div id="planQty" class="big">0</div>
@@ -77,6 +88,8 @@ button{cursor:pointer}
 </div>
 
 <input type="file" id="inboundFile" accept=".csv">
+
+</div>
     
 <script>
 let currentItem=null;
@@ -482,6 +495,26 @@ function registerRack(rack){
 
     currentItem=null;
 }
+function showMode(mode){
+
+    if(mode==="rack"){
+
+        document.getElementById("rackMode").style.display="block";
+        document.getElementById("inboundMode").style.display="none";
+
+    }else{
+
+        document.getElementById("rackMode").style.display="none";
+        document.getElementById("inboundMode").style.display="block";
+    }
+
+    localStorage.setItem("dpsMode",mode);
+}
+
+showMode(
+    localStorage.getItem("dpsMode") || "rack"
+);
+    
  
 </script>
 </body>
