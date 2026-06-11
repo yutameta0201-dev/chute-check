@@ -510,19 +510,20 @@ document.getElementById("actualQty").innerText=
 document.getElementById("remainQty").innerText=
     remain;
 
-    if(remain===0){
+   if(remain===0){
 
-        speak("完了");
+    speak("完了");
 
-    }else if(remain<0){
+}else if(remain<0){
 
-        speak("超過");
+    speak("超過");
 
-    }else{
+}else{
 
-        speak(actualData[code].toString());
-    }
-    renderInboundList();
+    speak(actualData[code].toString());
+}
+
+renderInboundList();
 }
 
     
