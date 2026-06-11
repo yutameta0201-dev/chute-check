@@ -16,6 +16,18 @@ button{cursor:pointer}
 .tools{display:flex;gap:8px;margin-top:10px}
 .tools button{flex:1;padding:12px;font-size:18px}
 #oldRack{margin-top:20px;font-size:32px;font-weight:bold;color:#666;}
+.modeActive{
+    background:#4CAF50;
+    color:white;
+    font-weight:bold;
+}
+.complete{
+    background:#90EE90;
+}
+
+.over{
+    background:#ff9999;
+}
 </style>
 </head>
 <body tabindex="0">
@@ -26,8 +38,11 @@ button{cursor:pointer}
 <h2>DPS棚番登録アプリ</h2>
     
 <div class="tools">
-    <button onclick="showMode('rack')">棚番登録</button>
-    <button onclick="showMode('inbound')">入庫チェック</button>
+   <button id="rackBtn"
+onclick="showMode('rack')">棚番登録</button>
+
+<button id="inboundBtn"
+onclick="showMode('inbound')">入庫チェック</button>
 </div>
 
 <div id="rackMode">
@@ -74,14 +89,17 @@ button{cursor:pointer}
 </div>
 
 <div id="inboundMode" style="display:none">
+
 <div class="info">
 <div>商品名</div>
 <div id="inboundItemName" class="big">---</div>
 </div>
+
 <div class="info">
 <div>棚番</div>
 <div id="inboundRack" class="big">---</div>
 </div>
+
 <div class="info">
 <div>入庫予定</div>
 <div id="planQty" class="big">0</div>
@@ -102,8 +120,20 @@ button{cursor:pointer}
 <button onclick="resetInbound()">
 入庫リセット
 </button>
+
+<h3>未完了一覧</h3>
+
+<div id="inboundList"
+style="
+background:#fff;
+border:2px solid #333;
+height:250px;
+overflow:auto;
+padding:5px;
+">
 </div>
-    
+
+</div> 
 <script>
 let currentItem=null;
 
@@ -239,6 +269,8 @@ localStorage.setItem(
     "dpsInbound",
     JSON.stringify(inboundData)
 );
+
+renderInboundList();
 
 speak("入庫データを読み込みました");
  };
@@ -490,6 +522,7 @@ document.getElementById("remainQty").innerText=
 
         speak(actualData[code].toString());
     }
+    renderInboundList();
 }
 
     
@@ -576,6 +609,39 @@ function resetInbound(){
 
     speak("リセットしました");
 }
+function renderInboundList(){
+
+    let html="";
+
+    Object.keys(inboundData).forEach(code=>{
+
+        let plan=inboundData[code].qty;
+
+        let actual=actualData[code] || 0;
+
+        let remain=plan-actual;
+
+        if(remain<=0) return;
+
+        let rack="";
+
+        if(master[code]){
+            rack=master[code].rack;
+        }
+
+        html +=
+        "<div style='padding:8px;border-bottom:1px solid #ddd'>" +
+        rack + "　" +
+        inboundData[code].name +
+        "　残:" +
+        remain +
+        "</div>";
+    });
+
+    document.getElementById("inboundList")
+        .innerHTML=html;
+}
+    
   function restoreLastItem(){
 
     const code=
@@ -619,15 +685,33 @@ function resetInbound(){
 }  
 function showMode(mode){
 
+    document.getElementById("rackBtn")
+        .classList.remove("modeActive");
+
+    document.getElementById("inboundBtn")
+        .classList.remove("modeActive");
+
     if(mode==="rack"){
 
-        document.getElementById("rackMode").style.display="block";
-        document.getElementById("inboundMode").style.display="none";
+        document.getElementById("rackMode")
+            .style.display="block";
+
+        document.getElementById("inboundMode")
+            .style.display="none";
+
+        document.getElementById("rackBtn")
+            .classList.add("modeActive");
 
     }else{
 
-        document.getElementById("rackMode").style.display="none";
-        document.getElementById("inboundMode").style.display="block";
+        document.getElementById("rackMode")
+            .style.display="none";
+
+        document.getElementById("inboundMode")
+            .style.display="block";
+
+        document.getElementById("inboundBtn")
+            .classList.add("modeActive");
     }
 
     localStorage.setItem("dpsMode",mode);
