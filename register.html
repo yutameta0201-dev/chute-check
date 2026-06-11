@@ -387,15 +387,12 @@ function processScan(scan){
     code
 );
 
-    if(localStorage.getItem("dpsMode")==="inbound"){
+   if(localStorage.getItem("dpsMode")==="inbound"){
 
     if(!actualData[code]){
         actualData[code]=0;
     }
 
-
-    if(lastScanCode!==code){
-        
     actualData[code]++;
 
     localStorage.setItem(
@@ -403,44 +400,44 @@ function processScan(scan){
         JSON.stringify(actualData)
     );
 
-let plan=0;
+    let plan=0;
 
-if(inboundData[code]){
-    plan=inboundData[code].qty;
+    if(inboundData[code]){
+        plan=inboundData[code].qty;
+    }
+
+    let actual=actualData[code] || 0;
+
+    document.getElementById("planQty").innerText=plan;
+    document.getElementById("actualQty").innerText=actual;
+    document.getElementById("remainQty").innerText=
+        plan-actual;
+
+    renderInboundList();
 }
 
-let actual=actualData[code] || 0;
+document.getElementById("itemCode")
+    .innerText=code;
 
-document.getElementById("planQty").innerText=plan;
-document.getElementById("actualQty").innerText=actual;
-document.getElementById("remainQty").innerText=
-    plan-actual;
+document.getElementById("itemName")
+    .innerText=item.name;
 
-renderInboundList();
+document.getElementById("currentRack")
+    .innerText=item.rack;
 
-
-    document.getElementById("itemCode")
-        .innerText=code;
-
-    document.getElementById("itemName")
-        .innerText=item.name;
-
-    document.getElementById("currentRack")
-        .innerText=item.rack;
-    document.getElementById("inboundItemName")
+document.getElementById("inboundItemName")
     .innerText=item.name;
 
 document.getElementById("inboundRack")
-    .innerText=item.rack;    
+    .innerText=item.rack;
 
-    document.getElementById("oldRack")
-        .innerText=item.oldRack || "---";
+document.getElementById("oldRack")
+    .innerText=item.oldRack || "---";
 
-    document.getElementById("newRack")
-        .innerText="---";
+document.getElementById("newRack")
+    .innerText="---";
 
-    speak(item.name);
-}
+speak(item.name);
 }
 
 function downloadCSV(){
@@ -672,14 +669,8 @@ function renderInboundList(){
         if(master[code]){
             rack=master[code].rack;
         }
-
-     let rack="";
-
-if(master[code]){
-    rack=master[code].rack;
-}
-
-html +=
+        
+    html +=
 "<div style='padding:8px;border-bottom:1px solid #ddd'>" +
 rack + "　" +
 inboundData[code].name +
