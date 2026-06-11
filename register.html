@@ -258,7 +258,7 @@ document.getElementById("inboundFile").addEventListener("change",e=>{
     if(c.length<11) continue;
 
     const code=c[7].trim().replace(/^0+/,"");
-const name=c[].trim();
+const name=c[8].trim();
 const qty=parseInt(c[10])||0;
 
     inboundData[code]={
