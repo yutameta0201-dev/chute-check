@@ -402,7 +402,21 @@ function processScan(scan){
         "dpsActual",
         JSON.stringify(actualData)
     );
+
+let plan=0;
+
+if(inboundData[code]){
+    plan=inboundData[code].qty;
 }
+
+let actual=actualData[code] || 0;
+
+document.getElementById("planQty").innerText=plan;
+document.getElementById("actualQty").innerText=actual;
+document.getElementById("remainQty").innerText=
+    plan-actual;
+
+renderInboundList();
 
 
     document.getElementById("itemCode")
@@ -659,12 +673,18 @@ function renderInboundList(){
             rack=master[code].rack;
         }
 
-        html +=
+     let rack="";
+
+if(master[code]){
+    rack=master[code].rack;
+}
+
+html +=
 "<div style='padding:8px;border-bottom:1px solid #ddd'>" +
-"コード:" + code +
-" 予定:" + plan +
-" 実績:" + actual +
-" 残:" + remain +
+rack + "　" +
+inboundData[code].name +
+"　残:" +
+remain +
 "</div>";
     });
 
