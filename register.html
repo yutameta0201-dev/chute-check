@@ -403,39 +403,7 @@ function processScan(scan){
         JSON.stringify(actualData)
     );
 }
-let actual=actualData[code] || 0;
 
-document.getElementById("actualQty").innerText=
-    actual;
-lastScanCode=code;
-
-lastScanCode=code;
-
-let plan=0;
-
-if(inboundData[code]){
-    plan=inboundData[code].qty;
-}
-
-let actual=actualData[code] || 0;
-
-document.getElementById("planQty").innerText=plan;
-document.getElementById("actualQty").innerText=actual;
-document.getElementById("remainQty").innerText=
-    plan-actual;
-
-renderInboundList();
-        
-    let plan=0;
-let actual=actualData[code]||0;
-
-if(inboundData[code]){
-    plan=inboundData[code].qty;
-}
-
-document.getElementById("planQty").innerText=plan;
-document.getElementById("actualQty").innerText=actual;
-document.getElementById("remainQty").innerText=plan-actual;
 
     document.getElementById("itemCode")
         .innerText=code;
