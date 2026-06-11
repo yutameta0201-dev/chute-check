@@ -74,7 +74,14 @@ button{cursor:pointer}
 </div>
 
 <div id="inboundMode" style="display:none">
-    
+<div class="info">
+<div>商品名</div>
+<div id="inboundItemName" class="big">---</div>
+</div>
+<div class="info">
+<div>棚番</div>
+<div id="inboundRack" class="big">---</div>
+</div>
 <div class="info">
 <div>入庫予定</div>
 <div id="planQty" class="big">0</div>
@@ -133,6 +140,8 @@ if(savedMaster){
 
     document.getElementById("masterCount").innerText=
         Object.keys(master).length;
+
+    setTimeout(restoreLastItem,100);
 }
 
 function speak(t){
@@ -339,6 +348,10 @@ function processScan(scan){
 
         oldRack:item.oldRack
     };
+    localStorage.setItem(
+    "lastItemCode",
+    code
+);
 
     if(localStorage.getItem("dpsMode")==="inbound"){
 
@@ -378,6 +391,11 @@ document.getElementById("remainQty").innerText=plan-actual;
 
     document.getElementById("currentRack")
         .innerText=item.rack;
+    document.getElementById("inboundItemName")
+    .innerText=item.name;
+
+document.getElementById("inboundRack")
+    .innerText=item.rack;    
 
     document.getElementById("oldRack")
         .innerText=item.oldRack || "---";
@@ -558,7 +576,47 @@ function resetInbound(){
 
     speak("リセットしました");
 }
-    
+  function restoreLastItem(){
+
+    const code=
+    localStorage.getItem("lastItemCode");
+
+    if(!code) return;
+
+    const item=master[code];
+
+    if(!item) return;
+
+    document.getElementById("itemCode")
+        .innerText=code;
+
+    document.getElementById("itemName")
+        .innerText=item.name;
+
+    document.getElementById("currentRack")
+        .innerText=item.rack;
+
+    document.getElementById("oldRack")
+        .innerText=item.oldRack || "---";
+
+    document.getElementById("inboundItemName")
+        .innerText=item.name;
+
+    document.getElementById("inboundRack")
+        .innerText=item.rack;
+
+    let plan=0;
+    let actual=actualData[code] || 0;
+
+    if(inboundData[code]){
+        plan=inboundData[code].qty;
+    }
+
+    document.getElementById("planQty").innerText=plan;
+    document.getElementById("actualQty").innerText=actual;
+    document.getElementById("remainQty").innerText=
+        plan-actual;
+}  
 function showMode(mode){
 
     if(mode==="rack"){
