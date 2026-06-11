@@ -210,28 +210,28 @@ document.getElementById("inboundFile").addEventListener("change",e=>{
 
    const lines=r.result.split(/\r?\n/);
 
-   for(let i=1;i<lines.length;i++){
+  for(let i=1;i<lines.length;i++){
 
-      const c=lines[i].split(",");
+    const c=lines[i].split(",");
 
-      if(c.length<11) continue;
+    if(c.length<11) continue;
 
-      const code=c[7].trim().replace(/^0+/,"");
-      const qty=parseInt(c[10])||0;
-      const name=c[8].trim();
+    const code=c[7].trim().replace(/^0+/,"");
+    const qty=parseInt(c[10])||0;
+    const name=c[8].trim();
 
-      inboundData[code]={
-         name:name,
-         qty:qty
-      };
+    inboundData[code]={
+        name:name,
+        qty:qty
+    };
+}
 
-    localStorage.setItem(
+localStorage.setItem(
     "dpsInbound",
     JSON.stringify(inboundData)
-);     
-   }
+);
 
-   speak("入庫データを読み込みました");
+speak("入庫データを読み込みました");
  };
 
  r.readAsText(file,"utf-8");
