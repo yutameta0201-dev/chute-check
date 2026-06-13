@@ -447,14 +447,16 @@ if(localStorage.getItem("dpsMode")==="inbound"){
 
     let actual=actualData[code] || 0;
 
+    let remain=plan-actual;
+
     if(remain<=0){
 
-    speak("完了");
+        speak("完了");
 
-}else{
+    }else{
 
-    speak("あと" + remain + "ケース");
-}
+        speak("あと" + remain + "ケース");
+    }
 
 }else{
 
