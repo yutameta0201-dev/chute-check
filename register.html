@@ -178,10 +178,22 @@ if(savedMaster){
 
 function speak(t){
  try{
+
   speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(t);
+
+  const u=
+  new SpeechSynthesisUtterance(t);
+
   u.lang="ja-JP";
+
+  u.rate=0.8;   // 少しゆっくり
+
+  u.pitch=1.0;
+
+  u.volume=1.0;
+
   speechSynthesis.speak(u);
+
  }catch(e){}
 }
 
