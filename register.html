@@ -437,7 +437,20 @@ document.getElementById("oldRack")
 document.getElementById("newRack")
     .innerText="---";
 
-speak(item.name);
+if(localStorage.getItem("dpsMode")==="inbound"){
+
+    let plan=0;
+
+    if(inboundData[code]){
+        plan=inboundData[code].qty;
+    }
+
+    speak(plan.toString());
+
+}else{
+
+    speak(item.name);
+}
 }
 
 function downloadCSV(){
