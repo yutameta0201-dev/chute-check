@@ -457,18 +457,7 @@ if(localStorage.getItem("dpsMode")==="inbound"){
         plan=inboundData[code].qty;
     }
 
-    let actual=actualData[code] || 0;
-
-    let remain=plan-actual;
-
-    if(remain<=0){
-
-        speak("完了");
-
-    }else{
-
-        speak("あと" + remain + "ケース");
-    }
+    speak(plan + "ケース");
 
 }else{
 
@@ -553,11 +542,11 @@ document.getElementById("remainQty").innerText=
 
 }else if(remain<0){
 
-    speak("超過");
+    speak("超過" + Math.abs(remain) + "ケース");
 
 }else{
 
-    speak(actualData[code].toString());
+    speak("あと" + remain + "ケース");
 }
 
 renderInboundList();
