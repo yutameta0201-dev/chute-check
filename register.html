@@ -267,7 +267,7 @@ document.getElementById("inboundFile").addEventListener("change",e=>{
 
     const c=lines[i].split(",");
 
-    if(c.length<11) continue;
+    if(c.length<12) continue;
 
     const code=c[7].trim().replace(/^0+/,"");
 const name=c[8].trim();
@@ -285,10 +285,6 @@ inboundData[code]={
 localStorage.setItem(
     "dpsInbound",
     JSON.stringify(inboundData)
-);
-console.log(
-    "inbound=",
-    inboundData[code]
 );
 
 renderInboundList();
@@ -380,11 +376,7 @@ function processScan(scan){
             item = master[foundCode];
         }
     }
-    console.log(
-    "scan=",scan,
-    "code=",code
-);
-
+   
     if(!item){
 
         document.getElementById("itemName")
@@ -472,8 +464,16 @@ if(localStorage.getItem("dpsMode")==="inbound"){
 
     let plan=0;
 
-    if(inboundData[code]){
-        plan=inboundData[code].qty;
+    let inbound=inboundData[code];
+
+    if(!inbound){
+
+        inbound=Object.values(inboundData)
+            .find(x=>x.jan===scan);
+    }
+
+    if(inbound){
+        plan=inbound.qty;
     }
 
     speak(plan + "ケース");
