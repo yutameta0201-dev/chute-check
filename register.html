@@ -186,9 +186,9 @@ function speak(t){
 
   u.lang="ja-JP";
 
-  u.rate=1.2;   // 少しゆっくり
+  u.rate=1.1;   // 少しゆっくり
 
-  u.pitch=1.0;
+  u.pitch=0.8;
 
   u.volume=1.0;
 
@@ -273,10 +273,13 @@ document.getElementById("inboundFile").addEventListener("change",e=>{
 const name=c[8].trim();
 const qty=parseInt(c[10])||0;
 
-    inboundData[code]={
-        name:name,
-        qty:qty
-    };
+   const jan=(c[11] || "").trim();
+
+inboundData[code]={
+    name:name,
+    qty:qty,
+    jan:jan
+};
 }
 
 localStorage.setItem(
@@ -414,9 +417,17 @@ function processScan(scan){
 
     let plan=0;
 
-    if(inboundData[code]){
-        plan=inboundData[code].qty;
-    }
+    let inbound=inboundData[code];
+
+if(!inbound){
+
+    inbound=Object.values(inboundData)
+        .find(x=>x.jan===scan);
+}
+
+if(inbound){
+    plan=inbound.qty;
+}
 
     let actual=actualData[code] || 0;
 
