@@ -286,6 +286,10 @@ localStorage.setItem(
     "dpsInbound",
     JSON.stringify(inboundData)
 );
+console.log(
+    "inbound=",
+    inboundData[code]
+);
 
 renderInboundList();
 
@@ -376,6 +380,10 @@ function processScan(scan){
             item = master[foundCode];
         }
     }
+    console.log(
+    "scan=",scan,
+    "code=",code
+);
 
     if(!item){
 
