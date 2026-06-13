@@ -445,7 +445,11 @@ if(localStorage.getItem("dpsMode")==="inbound"){
         plan=inboundData[code].qty;
     }
 
-    speak(plan.toString());
+    let actual=actualData[code] || 0;
+
+    let remain=plan-actual;
+
+    speak("残り" + remain);
 
 }else{
 
