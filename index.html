@@ -122,6 +122,11 @@ body {
     background:#4CAF50;
     color:white;
 }
+.clear {
+    background:#f44336;
+    color:white;
+}
+    
 </style>
 </head>
 
@@ -192,11 +197,23 @@ body {
         <button class="btn csv"
                 onclick="downloadCSV()">
             CSV出力
+　　　　</button>
+　　　　 <button class="btn clear"
+            onclick="clearData()">
+        データ削除
+    </button>
+
+</div>
+            
         </button>
 
     </div>
 
 </div>
+    <button class="btn"
+        onclick="clearData()">
+    データ削除
+</button>
 
 <script>
 
@@ -211,7 +228,7 @@ let buffer="";
 let orderMode="asc";
 let machineType=1;
 
-let csvData=[];
+let csvData = JSON.parse(localStorage.getItem("csvData")) || [];
 
 let speaking=false;
 
@@ -735,16 +752,20 @@ function downloadCSV(){
 ========================= */
 function addLog(type,data){
 
-    let time=new Date().toLocaleTimeString();
+    let time = new Date().toLocaleTimeString();
 
     csvData.push({
         time,
-        batch:workCode,
-        result:type,
-        value:data
-    });    
-}
+        batch: workCode,
+        result: type,
+        value: data
+    });
 
+    localStorage.setItem(
+        "csvData",
+        JSON.stringify(csvData)
+    );
+}
 /* =========================
    ゼロ埋め
 ========================= */
