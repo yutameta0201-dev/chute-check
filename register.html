@@ -491,33 +491,38 @@ if(localStorage.getItem("dpsMode")==="inbound"){
 
 function downloadCSV(){
 
- if(logs.length===0){
-   alert("データなし");
-   return;
- }
+  if(logs.length===0){
+    alert("データなし");
+    return;
+  }
 
- let csv="日時,商品コード,商品名,現在棚番,登録棚番\n";
+  let csv = "商品コード,棚番1,棚番2,棚番3,商品名\n";
 
- 
-logs.forEach(r=>{
-  csv+=`${r.time},${r.code},${r.name},="${r.currentRack}",="${r.newRack}"\n`;
-});
+  logs.forEach(r=>{
 
- const blob=new Blob(["\uFEFF"+csv],{type:"text/csv"});
- const a=document.createElement("a");
- a.href=URL.createObjectURL(blob);
- a.download="DPS登録.csv";
-a.click();
+    const rack = String(r.newRack || "").split("-");
 
-logs=[];
+    csv += `${r.code},${rack[0] || ""},${rack[1] || ""},${rack[2] || ""},${r.name}\n`;
 
-localStorage.removeItem("dpsLogs");
+  });
 
-document.getElementById("count").innerText="0";
+  const blob = new Blob(["\uFEFF" + csv], {type:"text/csv"});
 
-document.getElementById("history").innerHTML="";
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "DPS登録.csv";
+  a.click();
 
-speak("出力完了");
+  URL.revokeObjectURL(a.href);
+
+  logs = [];
+
+  localStorage.removeItem("dpsLogs");
+
+  document.getElementById("count").innerText = "0";
+  document.getElementById("history").innerHTML = "";
+
+  speak("出力完了");
 }
 
 function addQty(q){
