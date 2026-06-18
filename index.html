@@ -248,6 +248,13 @@ let isWorking=false;
 let workCode="";
 let workerName="";
 let currentChute=1;
+    
+const workers = {
+    "A001": "中島康友",
+    "A002": "飯田直樹",
+    "A003": "内藤敦"
+};
+    
 let startChute=1;
 let buffer="";
 
@@ -519,7 +526,9 @@ document.addEventListener("keydown", e=>{
 
        if(mode==="worker"){
 
-    workerName = buffer.trim();
+    const code = buffer.trim();
+
+    workerName = workers[code] || "未登録";
 
     document.getElementById("workerName").innerText = workerName;
 
