@@ -250,11 +250,18 @@ let workerName="";
 let currentChute=1;
     
 const workers = {
-    "a001": "中嶋康友",
-    "a002": "飯田直樹",
-    "a003": "内藤敦",
-    "a004": "中島渉",
-    "a005": "日当瀬実"
+    "a001": {
+        name: "中嶋康友",
+        voice: "なかじま やすとも"
+    },
+    "a002": {
+        name: "飯田直樹",
+        voice: "いいだ なおき"
+    },
+    "a003": {
+        name: "内藤敦",
+        voice: "ないとう あつし"
+    }
 };
     
 let startChute=1;
@@ -530,13 +537,23 @@ document.addEventListener("keydown", e=>{
 
     const code = buffer.trim();
 
-    console.log("読み取り内容:", JSON.stringify(code));
+const worker = workers[code];
 
-    workerName = workers[code] || "未登録";
+if(worker){
+
+    workerName = worker.name;
+
+    document.getElementById("workerName").innerText = worker.name;
+
+    speak(worker.voice + "さんです");
+
+}else{
+
+    workerName = "未登録";
 
     document.getElementById("workerName").innerText = workerName;
 
-    speak(workerName + "さんです");
+    speak("みとうろくです");
 }
 else if(mode==="batch"){
 
