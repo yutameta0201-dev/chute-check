@@ -177,14 +177,34 @@ body {
         <div id="batchBig">---</div>
     </div>
 
-    <button id="startBtn"
-            onclick="startWork()">
-        作業開始
+   <button id="startBtn"
+        onclick="startWork()">
+    作業開始
+</button>
+
+<div class="center">
+    <div>確認シュート</div>
+    <div id="chuteDisplay">---</div>
+</div>
+
+<div class="bottom">
+
+    <button class="btn complete"
+            onclick="completeBatch()">
+        完了 → 次へ
     </button>
-　　　　 <button class="btn clear">
-        <div>確認シュート</div>
-        <div id="chuteDisplay">---</div>
-    </div>
+
+    <button class="btn csv"
+            onclick="downloadCSV()">
+        CSV出力
+    </button>
+
+    <button class="btn clear"
+            onclick="clearData()">
+        データ削除
+    </button>
+
+</div>
 
     <div class="bottom">
 
@@ -578,18 +598,7 @@ function processResult(data){
 
         return;
     }
-　　function clearData(){
-
-    if(!confirm("保存データを削除しますか？")) return;
-
-    csvData = [];
-
-    localStorage.removeItem("csvData");
-
-    speak("データを削除しました");
-
-    alert("データを削除しました");
-}
+　　
     let clean = data.trim();
 
     let match = clean.match(/^(\d+)\/(\d{3})/);
@@ -752,6 +761,18 @@ function downloadCSV(){
     a.click();
 
     speak("シーエスブイを出力しました");
+}
+　　function clearData(){
+
+    if(!confirm("保存データを削除しますか？")) return;
+
+    csvData = [];
+
+    localStorage.removeItem("csvData");
+
+    speak("データを削除しました");
+
+    alert("データを削除しました");
 }
 
 /* =========================
