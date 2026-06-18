@@ -528,6 +528,8 @@ document.addEventListener("keydown", e=>{
 
     const code = buffer.trim();
 
+    console.log("読み取り内容:", JSON.stringify(code));
+
     workerName = workers[code] || "未登録";
 
     document.getElementById("workerName").innerText = workerName;
