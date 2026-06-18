@@ -15,7 +15,7 @@ body {
 
 .container {
     display:grid;
-    grid-template-rows: 160px 140px auto auto 1fr 160px;
+    grid-template-rows: 100px 160px 140px auto auto 1fr 160px;
     height:100vh;
     gap:10px;
     padding:10px;
@@ -69,6 +69,31 @@ body {
     font-weight:bold;
 }
 
+.worker-area{
+    border:3px solid black;
+    background:#fff3cd;
+    display:flex;
+    align-items:center;
+    padding:10px 20px;
+    gap:20px;
+}
+
+.worker-label{
+    font-size:32px;
+    font-weight:bold;
+}
+
+#workerName{
+    flex:1;
+    font-size:48px;
+    font-weight:bold;
+}
+
+#startBtn {
+    width:100%;
+    ...
+}
+
 #startBtn {
     width:100%;
     font-size:60px;
@@ -88,7 +113,7 @@ body {
 
 #chuteDisplay {
     flex:1;
-    font-size:12vw;
+    font-size:vw;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -133,6 +158,15 @@ body {
 <body tabindex="0">
 
 <div class="container">
+
+    <div class="worker-area"
+         onclick="setMode('worker')">
+
+        <div class="worker-label">作業者</div>
+
+        <div id="workerName">QRを読込</div>
+
+    </div>
 
     <div class="top">
 
@@ -212,6 +246,7 @@ let mode="";
 let isWorking=false;
 
 let workCode="";
+let workerName="";
 let currentChute=1;
 let startChute=1;
 let buffer="";
@@ -365,6 +400,10 @@ function setMode(m){
 
         speak("検品を始めるシュートのキューアールコードを読み込んでください");
     }
+    if(m==="worker"){
+
+    speak("作業者のキューアールコードを読み込んでください");
+}
 }
 
 /* =========================
@@ -478,16 +517,24 @@ document.addEventListener("keydown", e=>{
 
     if(e.key==="Enter"){
 
-        if(mode==="batch"){
+       if(mode==="worker"){
 
-            let b = buffer.replace(/\D/g,'');
+    workerName = buffer.trim();
 
-            workCode=b.padStart(8,"0");
+    document.getElementById("workerName").innerText = workerName;
 
-            updateBatch();
+    speak(workerName + "さんです");
+}
+else if(mode==="batch"){
 
-            speak("バッチ番号 " + workCode.split('').join(' ') + " を登録しました");
-        }
+    let b = buffer.replace(/\D/g,'');
+
+    workCode=b.padStart(8,"0");
+
+    updateBatch();
+
+    speak("バッチ番号 " + workCode.split('').join(' ') + " を登録しました");
+}
 
         else if(mode==="start"){
 
