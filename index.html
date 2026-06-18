@@ -205,14 +205,7 @@ body {
     </button>
 
 </div>
-     
-</button>
-
-</div>
-
-</div>
-   
-
+    
 <script>
 
 let mode="";
@@ -568,7 +561,7 @@ function startWork(){
 ========================= */
 function processResult(data){
 
-    if(data==="9999/999"){
+if(data==="9999/999"){
 
         addLog("キャンセル","シュート"+currentChute);
 
@@ -655,7 +648,7 @@ function processResult(data){
 /* =========================
    完了
 ========================= */
-    function completeBatch(){
+function completeBatch(){
 
 　　 mode="";
     buffer="";
@@ -744,7 +737,7 @@ function downloadCSV(){
 
     speak("シーエスブイを出力しました");
 }
-　　function clearData(){
+function clearData(){
 
     if(!confirm("保存データを削除しますか？")) return;
 
