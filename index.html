@@ -181,8 +181,7 @@ body {
             onclick="startWork()">
         作業開始
     </button>
-
-    <div class="center">
+　　　　 <button class="btn clear">
         <div>確認シュート</div>
         <div id="chuteDisplay">---</div>
     </div>
@@ -210,10 +209,7 @@ body {
     </div>
 
 </div>
-    <button class="btn"
-        onclick="clearData()">
-    データ削除
-</button>
+   
 
 <script>
 
@@ -295,7 +291,7 @@ function setupLongPress(id,type){
 
                         speak("開始バッチを設定しました");
 
-                        setimeout(()=>{
+                        setTimeout(()=>{
                             document.body.focus();},100);
                     }
                 }
@@ -582,7 +578,18 @@ function processResult(data){
 
         return;
     }
+　　function clearData(){
 
+    if(!confirm("保存データを削除しますか？")) return;
+
+    csvData = [];
+
+    localStorage.removeItem("csvData");
+
+    speak("データを削除しました");
+
+    alert("データを削除しました");
+}
     let clean = data.trim();
 
     let match = clean.match(/^(\d+)\/(\d{3})/);
@@ -774,7 +781,6 @@ function pad(n){
     return n.toString().padStart(3,"0");
 }
 
-<!--
 </script>
 
 <script>
