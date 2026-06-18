@@ -113,7 +113,7 @@ body {
 
 #chuteDisplay {
     flex:1;
-    font-size:vw;
+    font-size:16vw;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -250,9 +250,16 @@ let workerName="";
 let currentChute=1;
     
 const workers = {
-    "a001": "中島康友",
+    "a001": "中嶋康友",
     "a002": "飯田直樹",
     "a003": "内藤敦"
+　　"a004"："中島渉"
+    "005"："日当瀬実”
+
+
+
+
+    
 };
     
 let startChute=1;
@@ -771,11 +778,10 @@ function downloadCSV(){
         return;
     }
 
-    let csv="時間,バッチ,結果,内容\n";
-
+   let csv="時間,作業者,バッチ,結果,内容\n";
     csvData.forEach(r=>{
 
-        csv+=`${r.time},${r.batch},${r.result},${r.value}\n`;
+        csv+=`${r.time},${r.worker},${r.batch},${r.result},${r.value}\n`;
     });
 
     let bom="\uFEFF";
@@ -816,11 +822,12 @@ function addLog(type,data){
     let time = new Date().toLocaleTimeString();
 
     csvData.push({
-        time,
-        batch: workCode,
-        result: type,
-        value: data
-    });
+    time,
+    worker: workerName,
+    batch: workCode,
+    result: type,
+    value: data
+});
 
     localStorage.setItem(
         "csvData",
