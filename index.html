@@ -537,25 +537,55 @@ document.addEventListener("keydown", e=>{
 
     const code = buffer.trim();
 
-const worker = workers[code];
+    const worker = workers[code];
 
-if(worker){
+    if(worker){
 
-    workerName = worker.name;
+        workerName = worker.name;
 
-    document.getElementById("workerName").innerText = worker.name;
+        document.getElementById("workerName").innerText = worker.name;
 
-    speak(worker.voice + "さんです");
+        speak(worker.voice + "さんです");
 
-}else{
+    }else{
 
-    workerName = "未登録";
+        workerName = "未登録";
 
-    document.getElementById("workerName").innerText = workerName;
+        document.getElementById("workerName").innerText = workerName;
 
-    speak("みとうろくです");
+        speak("みとうろくです");
+    }
+
 }
 else if(mode==="batch"){
+
+    let b = buffer.replace(/\D/g,'');
+
+    workCode = b.padStart(8,"0");
+
+    updateBatch();
+
+    speak("バッチ番号 " + workCode.split('').join(' ') + " を登録しました");
+}
+else if(mode==="start"){
+
+    let s = buffer.match(/\d+/);
+
+    if(s){
+
+        currentChute = parseInt(s[0],10);
+
+        startChute = currentChute;
+
+        updateChute();
+
+        speak(currentChute + "から開始します");
+    }
+}
+else if(isWorking){
+
+    processResult(buffer);
+}
 
     let b = buffer.replace(/\D/g,'');
 
@@ -648,10 +678,10 @@ if(data==="9999/999"){
 
         updateChute();
 
-        return;
-    }
-　　
-    let clean = data.trim();
+    return;
+}
+
+let clean = data.trim();
 
     let match = clean.match(/^(\d+)\/(\d{3})/);
 
@@ -727,7 +757,7 @@ if(data==="9999/999"){
 ========================= */
 function completeBatch(){
 
-　　 mode="";
+    mode="";
     buffer="";
     
     let max=getMaxChute();
