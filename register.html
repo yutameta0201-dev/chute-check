@@ -25,6 +25,15 @@ button{cursor:pointer}
     background:#90EE90;
 }
 
+.editInput{
+    width:100%;
+    font-size:32px;
+    font-weight:bold;
+    border:none;
+    background:transparent;
+    text-align:center;
+}
+
 .over{
     background:#ff9999;
 }
@@ -49,7 +58,7 @@ onclick="showMode('inbound')">入庫チェック</button>
     
 <div class="info">
 <div>商品コード</div>
-<div id="itemCode" class="big">---</div>
+<input id="itemCode" class="editInput" value="---" readonly>
 </div>
 
 <div class="info">
@@ -69,7 +78,7 @@ onclick="showMode('inbound')">入庫チェック</button>
 
 <div class="info">
 <div>登録棚番</div>
-<div id="newRack" class="big">---</div>
+<input id="newRack" class="editInput" value="" placeholder="---" readonly>
 </div>
 
 <div class="info">
@@ -444,8 +453,7 @@ if(inbound){
     renderInboundList();
 }
 
-document.getElementById("itemCode")
-    .innerText=code;
+document.getElementById("itemCode").value=code;
 
 document.getElementById("itemName")
     .innerText=item.name;
@@ -462,8 +470,7 @@ document.getElementById("inboundRack")
 document.getElementById("oldRack")
     .innerText=item.oldRack || "---";
 
-document.getElementById("newRack")
-    .innerText="---";
+document.getElementById("newRack").value="";
 
 if(localStorage.getItem("dpsMode")==="inbound"){
 
@@ -605,8 +612,7 @@ function registerRack(rack){
         return;
     }
 
-    document.getElementById("newRack")
-        .innerText=rack;
+    document.getElementById("newRack").value=rack;
 
     let now=new Date().toLocaleString();
 
@@ -748,8 +754,7 @@ remain +
 
     if(!item) return;
 
-    document.getElementById("itemCode")
-        .innerText=code;
+    document.getElementById("itemCode").value=code;
 
     document.getElementById("itemName")
         .innerText=item.name;
@@ -811,6 +816,71 @@ function showMode(mode){
 
     localStorage.setItem("dpsMode",mode);
 }
+
+
+let pressTimer;
+
+function enableLongPress(id,callback){
+
+    const obj=document.getElementById(id);
+
+    obj.addEventListener("mousedown",()=>{ pressTimer=setTimeout(callback,1000); });
+    obj.addEventListener("mouseup",()=>{ clearTimeout(pressTimer); });
+    obj.addEventListener("mouseleave",()=>{ clearTimeout(pressTimer); });
+    obj.addEventListener("touchstart",()=>{ pressTimer=setTimeout(callback,1000); });
+    obj.addEventListener("touchend",()=>{ clearTimeout(pressTimer); });
+
+}
+
+enableLongPress("itemCode",()=>{
+
+    const obj=document.getElementById("itemCode");
+    obj.readOnly=false;
+    obj.focus();
+    obj.select();
+
+});
+
+document.getElementById("itemCode").addEventListener("keydown",e=>{
+
+    if(e.key==="Enter"){
+
+        e.preventDefault();
+        e.target.readOnly=true;
+        processScan(e.target.value.trim());
+
+    }
+
+});
+
+enableLongPress("newRack",()=>{
+
+    if(!currentItem){
+
+        speak("先に商品を読んでください");
+        return;
+
+    }
+
+    const obj=document.getElementById("newRack");
+    obj.readOnly=false;
+    obj.focus();
+    obj.select();
+
+});
+
+document.getElementById("newRack").addEventListener("keydown",e=>{
+
+    if(e.key==="Enter"){
+
+        e.preventDefault();
+        e.target.readOnly=true;
+        registerRack(e.target.value.trim());
+        e.target.value="";
+
+    }
+
+});
 
 showMode(
     localStorage.getItem("dpsMode") || "rack"
