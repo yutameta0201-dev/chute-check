@@ -1,35 +1,117 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#153b5b"><title>オーダー検品</title>
 <style>
-*{box-sizing:border-box}body{margin:0;padding:10px;background:#eef2f6;color:#17212b;font-family:system-ui,"Noto Sans JP",sans-serif;max-width:900px;margin:auto}header{background:#153b5b;color:white;padding:16px;border-radius:14px}h1{font-size:22px;margin:0 0 5px}.muted{color:#667085;font-size:13px}.card{background:white;padding:13px;border-radius:14px;margin:10px 0;box-shadow:0 2px 8px #0001}h2{font-size:17px;margin:0 0 10px}button{border:0;border-radius:10px;padding:12px;background:#1769aa;color:white;font-size:15px;font-weight:700}button.secondary{background:#526273}button.danger{background:#b42318}input{font-size:16px;max-width:100%}input[type=text]{width:100%;padding:13px;border:2px solid #b8c4d0;border-radius:10px;font-size:22px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.stat{background:#f1f5f9;padding:10px;border-radius:10px;text-align:center}.stat b{display:block;font-size:23px}.status{padding:12px;border-radius:10px;background:#e8eef5;margin-top:10px;white-space:pre-line;font-weight:750}.good{background:#dcfce7;color:#166534}.bad{background:#fee2e2;color:#991b1b}.info{background:#dbeafe;color:#1e40af}.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}.tablewrap{max-height:52vh;overflow:auto}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:8px 5px;border-bottom:1px solid #e5e7eb}th{position:sticky;top:0;background:#f8fafc}.remain{font-size:18px;font-weight:800}.done{background:#ecfdf3}.ok{color:#087443}.ng{color:#b42318}.small{font-size:11px;color:#667085}
+*{box-sizing:border-box}body{margin:0;padding:10px;background:#eef2f6;color:#17212b;font-family:system-ui,"Noto Sans JP",sans-serif;max-width:900px;margin:auto}header{background:#153b5b;color:white;padding:16px;border-radius:14px}h1{font-size:26px;margin:0 0 5px}.muted{color:#667085;font-size:16px}.card{background:white;padding:15px;border-radius:14px;margin:10px 0;box-shadow:0 2px 8px #0001}h2{font-size:20px;margin:0 0 12px}button{border:0;border-radius:10px;padding:15px;background:#1769aa;color:white;font-size:19px;font-weight:800}button.secondary{background:#526273}button.danger{background:#b42318}input{font-size:16px;max-width:100%}input[type=text]{width:100%;padding:15px;border:2px solid #b8c4d0;border-radius:10px;font-size:26px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.stat{background:#f1f5f9;padding:10px;border-radius:10px;text-align:center}.stat b{display:block;font-size:27px}.status{padding:12px;border-radius:10px;background:#e8eef5;margin-top:10px;white-space:pre-line;font-weight:750}.good{background:#dcfce7;color:#166534}.bad{background:#fee2e2;color:#991b1b}.info{background:#dbeafe;color:#1e40af}.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}.tablewrap{max-height:52vh;overflow:auto}table{width:100%;border-collapse:collapse;font-size:18px}th,td{text-align:left;padding:12px 7px;border-bottom:1px solid #e5e7eb}th{position:sticky;top:0;background:#f8fafc;font-size:16px}.remain{font-size:24px;font-weight:800}#list td:first-child b{font-size:20px}#list td:first-child div{font-size:19px}#list td:first-child .small{font-size:15px}.done{background:#ecfdf3}.ok{color:#087443}.ng{color:#b42318}.small{font-size:11px;color:#667085}
+.zoneButtons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.zoneBtn{background:#526273;padding:13px 6px;font-size:18px}.zoneBtn.active{background:#1769aa;outline:3px solid #bfdbfe}
 </style><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script></head><body>
 <header><h1>オーダー検品</h1><div class="muted" style="color:#dce8f3">Android ＋ Bluetoothハンディ ／ 商品マスタ外部読込版</div></header>
 <section class="card"><h2>① 商品マスタ（Excel）を読み込む</h2>
 <input id="masterFile" type="file" accept=".xlsx,.xls">
 <div id="masterPicked" class="muted">商品マスタ未選択</div>
 <button id="loadMaster" type="button" style="width:100%;margin-top:10px">選択した商品マスタを読み込む</button>
-<div id="masterMsg" class="status info">A列：商品コード、C列：商品名、D列：ケース入数、E列：バーコード、G列：親コード、H列：ゾーン、I列：棚、J列：ボタン</div>
+<div id="masterMsg" class="status info">A列：商品コード、C列：商品名、D列：ケース入数、E列：バーコード、F列：JANコード、G列：親商品コード、H列：ゾーン、I列：棚、J列：ボタン</div>
 </section>
 <section class="card"><h2>② オーダーDATを読み込む</h2><input id="dat" type="file" accept=".dat,.DAT,.txt,application/octet-stream"><div id="picked" class="muted">ファイル未選択</div><button id="loadDat" type="button" style="width:100%;margin-top:10px">選択したDATを読み込む</button><div id="datmsg" class="status info">DATファイルを選択してください。</div><div id="meta" class="muted"></div><div class="stats" style="margin-top:10px"><div class="stat">対象商品<b id="kinds">0</b></div><div class="stat">予定合計<b id="total">0</b></div><div class="stat">残り合計<b id="remaining">0</b></div></div></section>
-<section class="card"><h2>③ バーコード検品</h2><div class="muted">商品に付いているバーコードをスキャンしてください。読み取り後、自動で1個検品します（Enter送信がないハンディにも対応）。G列（親商品コード）があればG列を優先し、なければE列を使用します。</div><label for="scan">ハンディスキャン欄</label><input id="scan" type="text" inputmode="none" autocomplete="off" placeholder="バーコードをスキャン"><div class="row" style="margin-top:8px"><button id="focus">スキャン欄に戻る</button><button id="manual" class="secondary">手入力コードを検品</button></div><div id="result" class="status">DAT読込後にスキャンしてください。</div></section>
-<section class="card"><h2>④ 必要商品の一覧</h2><div class="row"><button id="all" class="secondary">全商品</button><button id="left" class="secondary">残りあり</button></div><div class="tablewrap"><table><thead><tr><th>未完了商品が上、完了商品は下（ゾーン／棚／ボタン・商品）</th><th>予定</th><th>残り</th><th>状態</th></tr></thead><tbody id="list"><tr><td colspan="4">DAT未読込</td></tr></tbody></table></div></section>
-<section class="card"><h2>⑤ 完了・結果出力</h2><div id="complete" class="status info">検品待ち</div><div class="row" style="margin-top:8px"><button id="csv">検品結果CSV</button><button id="reset" class="danger">検品数リセット</button></div><p class="muted">商品マスタは検品開始前にExcelファイルから読み込んでください。</p></section>
+<section class="card"><h2>③ バーコード検品</h2><div id="scanMode" class="status good" style="font-size:24px;text-align:center;margin-bottom:10px">現在：パック検品</div><button id="toggleMode" type="button" style="width:100%;font-size:22px;padding:18px;margin-bottom:12px">ケース検品に切替</button><div class="muted">商品に付いているバーコードをスキャンしてください。読み取り後、自動で1個検品します（Enter送信がないハンディにも対応）。G列（親商品コード）・E列（バーコード）・F列（JANコード）のいずれでも照合します。</div><label for="scan">ハンディスキャン欄</label><input id="scan" type="text" inputmode="none" autocomplete="off" placeholder="バーコードをスキャン"><div class="row" style="margin-top:8px"><button id="focus">スキャン欄に戻る</button><button id="manual" class="secondary">手入力コードを検品</button></div><div id="result" class="status">DAT読込後にスキャンしてください。</div><div class="small">全角数字も半角数字に変換して照合します。NG時は読み取り文字・検索キー・マスタ候補を表示します。</div></section>
+<section class="card"><h2>④ 必要商品の一覧</h2><div class="row"><button id="all" class="secondary">全商品</button><button id="left" class="secondary">残りあり</button></div><div class="zoneButtons" id="zoneButtons"><button type="button" class="zoneBtn active" data-zone="all">全ゾーン</button><button type="button" class="zoneBtn" data-zone="1">1ゾーン</button><button type="button" class="zoneBtn" data-zone="2">2ゾーン</button><button type="button" class="zoneBtn" data-zone="3">3ゾーン</button><button type="button" class="zoneBtn" data-zone="4">4ゾーン</button><button type="button" class="zoneBtn" data-zone="5">5ゾーン</button><button type="button" class="zoneBtn" data-zone="6">6ゾーン</button></div><div id="zoneInfo" class="muted" style="margin:8px 0">表示：全ゾーン</div><div class="tablewrap"><table><thead><tr><th>棚番・商品</th><th>予定（ケース／パック）</th><th>残りパック</th><th>状態</th></tr></thead><tbody id="list"><tr><td colspan="4">DAT未読込</td></tr></tbody></table></div></section>
+<section class="card"><h2>⑤ 完了・結果出力</h2><div id="complete" class="status info">検品待ち</div><div class="row" style="margin-top:8px"><button id="csv">検品結果CSV</button><button id="reset" class="danger">検品数リセット</button></div><p class="muted">商品マスタ・DAT・検品数はこのiPhone/ブラウザ内に自動保存され、次回起動時に復元されます。同じ端末・同じホーム画面アプリでご利用ください。</p></section>
 <script>
 let MASTER = [];
 const $ = id => document.getElementById(id);
 const dec = new TextDecoder('shift_jis');
-let orders=new Map(), barcodeIndex=new Map(), onlyLeft=false;
-function digits(v){return String(v??'').trim().replace(/\.0$/,'').replace(/\D/g,'')}
+let orders=new Map(), barcodeIndex=new Map(), onlyLeft=false, currentZone='all';
+let scanMode='pack';
+function updateModeUI(){const pack=scanMode==='pack';$('scanMode').textContent='現在：'+(pack?'パック検品':'ケース検品');$('scanMode').className='status '+(pack?'good':'info');$('toggleMode').textContent=pack?'ケース検品に切替':'パック検品に戻す';$('toggleMode').style.background=pack?'#526273':'#1769aa';}
+$('toggleMode').addEventListener('click',()=>{scanMode=scanMode==='pack'?'case':'pack';updateModeUI();say(scanMode==='pack'?'パック検品に切り替えました':'ケース検品に切り替えました','info');$('scan').focus();});
+
+// IndexedDBに商品マスタ・DAT受注・検品数を保存し、アプリ再起動後に復元する
+const DB_NAME='orderInspectionDB';
+const DB_STORE='appState';
+let dbReady=null;
+function openSaveDB(){
+ if(dbReady)return dbReady;
+ dbReady=new Promise((resolve,reject)=>{
+  if(!('indexedDB' in window)){reject(new Error('このブラウザはデータ保存に対応していません'));return;}
+  const req=indexedDB.open(DB_NAME,1);
+  req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(DB_STORE))db.createObjectStore(DB_STORE);};
+  req.onsuccess=()=>resolve(req.result);
+  req.onerror=()=>reject(req.error||new Error('保存領域を開けません'));
+ });
+ return dbReady;
+}
+async function saveAppState(){
+ try{
+  const db=await openSaveDB();
+  const state={
+   master:MASTER,
+   orders:[...orders.entries()],
+   onlyLeft,
+   savedAt:new Date().toISOString()
+  };
+  await new Promise((resolve,reject)=>{
+   const tx=db.transaction(DB_STORE,'readwrite');
+   tx.objectStore(DB_STORE).put(state,'current');
+   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+  });
+  $('datmsg').dataset.saved='1';
+ }catch(e){
+  console.warn('保存できませんでした',e);
+  const box=$('datmsg');
+  if(box)box.textContent += '\\n※端末内への自動保存に失敗しました';
+ }
+}
+async function restoreAppState(){
+ try{
+  const db=await openSaveDB();
+  const state=await new Promise((resolve,reject)=>{
+   const tx=db.transaction(DB_STORE,'readonly');
+   const req=tx.objectStore(DB_STORE).get('current');
+   req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error);
+  });
+  if(!state)return false;
+  MASTER=Array.isArray(state.master)?state.master:[];
+  orders=new Map(Array.isArray(state.orders)?state.orders:[]);
+  onlyLeft=!!state.onlyLeft;
+  scanMode='pack';updateModeUI();
+  if(MASTER.length)buildIndex();
+  if(orders.size){
+   $('masterPicked').textContent=`保存データから復元：商品マスタ ${MASTER.length.toLocaleString()}件`;
+   $('masterMsg').className='status good';
+   $('masterMsg').textContent=`商品マスタを復元しました：${MASTER.length.toLocaleString()}件`;
+   $('picked').textContent='保存データからDAT・検品状況を復元しました';
+   $('datmsg').className='status good';
+   $('datmsg').textContent='前回の検品データを復元しました。続きから検品できます。';
+   render();
+   say('前回の検品データを復元しました。続きから作業できます。','good');
+   return true;
+  }
+  if(MASTER.length){
+   $('masterPicked').textContent=`保存データから復元：商品マスタ ${MASTER.length.toLocaleString()}件`;
+   $('masterMsg').className='status good';
+   $('masterMsg').textContent='商品マスタを復元しました。DATを読み込んでください。';
+  }
+  return false;
+ }catch(e){console.warn('復元できませんでした',e);return false;}
+}
+function digits(v){return String(v??'').normalize('NFKC').trim().replace(/\.0$/,'').replace(/\D/g,'')}
 function padBarcode(v){let s=digits(v);return s?s.padStart(8,'0'):''}
 function buildIndex(){
  barcodeIndex.clear();
  for(const m of MASTER){
-   const parent=digits(m.parent);
-   const raw=parent && parent!=='0' ? parent : digits(m.barcode);
-   const key=padBarcode(raw);
-   if(!key)continue;
-   if(!barcodeIndex.has(key))barcodeIndex.set(key,[]);
-   barcodeIndex.get(key).push(m);
+   // 親商品コード・通常バーコード・JANコードをそれぞれ検索対象にする
+   // どれか一つが登録されていても、他のコードを検索対象から外さない
+   const candidates=[m.parent,m.barcode,m.jan];
+   const keys=[...new Set(candidates.map(v=>{
+     const d=digits(v);
+     return d ? d : '';
+   }).filter(Boolean))];
+   for(const raw of keys){
+     const key=padBarcode(raw);
+     if(!key)continue;
+     if(!barcodeIndex.has(key))barcodeIndex.set(key,[]);
+     const list=barcodeIndex.get(key);
+     if(!list.includes(m))list.push(m);
+   }
  }
 }
 function lines(bytes){let a=[],s=0;for(let i=0;i<bytes.length;i++)if(bytes[i]===10){let e=i;if(e>s&&bytes[e-1]===13)e--;if(e>s)a.push(bytes.slice(s,e));s=i+1}if(s<bytes.length)a.push(bytes.slice(s));return a}
@@ -37,32 +119,38 @@ function txt(b,a,z){return dec.decode(b.slice(a,z)).trim().replace(/\0/g,'')}
 function parseDat(buf){
  const ls=lines(new Uint8Array(buf)), map=new Map();let skipped=0, meta={};
  for(const b of ls){
-  if(b.length<73){skipped++;continue}
-  const batch=txt(b,0,7), depot=txt(b,7,11), depotName=txt(b,11,19), date=txt(b,25,33), code=txt(b,44,49), name=txt(b,49,69), q=txt(b,69,73);
-  if(!/^\d{5}$/.test(code)||!/^\d{4}$/.test(q)){skipped++;continue}
+  if(b.length<77){skipped++;continue}
+  const batch=txt(b,0,7), depot=txt(b,7,11), depotName=txt(b,11,19), date=txt(b,25,33);
+  const code=txt(b,44,49), name=txt(b,49,69), packText=txt(b,69,73);
+  const caseText=txt(b,73,76), displayFlag=txt(b,76,77);
+  if(!/^\d{5}$/.test(code)||!/^\d{4}$/.test(packText)||!/^\d{3}$/.test(caseText)||!/^[01]$/.test(displayFlag)){skipped++;continue}
   if(!meta.batch)meta={batch,depot,depotName,date};
-  if(!map.has(code))map.set(code,{code,name,qty:0,checked:0,barcode:'',masterName:'',caseQty:''});
-  map.get(code).qty+=Number(q);
+  if(!map.has(code))map.set(code,{code,name,qty:0,checked:0,barcode:'',masterName:'',caseQty:0,packQty:0,displayFlag,caseSize:1});
+  const o=map.get(code);o.packQty+=Number(packText);o.caseQty+=Number(caseText);o.displayFlag=displayFlag;
  }
- if(!map.size)throw Error('DATの商品行を読み取れません。');
+ if(!map.size)throw Error('DATの商品行を読み取れません。新形式（パック4桁＋ケース3桁＋区分1桁）を確認してください。');
  for(const o of map.values()){
-  const matches=MASTER.filter(m=>digits(m.code).padStart(5,'0')===o.code);
-  if(matches.length){const m=matches[0];o.masterName=m.name||o.name;o.caseQty=m.case;o.zone=m.zone||'';o.shelf=m.shelf||'';o.button=m.button||'';o.barcode=padBarcode((digits(m.parent)&&digits(m.parent)!=='0')?m.parent:m.barcode);}
-  else o.masterName=o.name;
+  const m=MASTER.find(x=>digits(x.code).padStart(5,'0')===o.code);
+  if(m){o.masterName=m.name||o.name;o.caseSize=Math.max(1,Number(digits(m.case))||1);o.zone=m.zone||'';o.shelf=m.shelf||'';o.button=m.button||'';o.barcode=padBarcode((digits(m.parent)&&digits(m.parent)!=='0')?m.parent:m.barcode);}
+  else{o.masterName=o.name;o.caseSize=1;}
+  o.qty=o.packQty+(o.caseQty*o.caseSize);
  }
  orders=map;
  $('datmsg').className='status good';$('datmsg').textContent=`読込成功：${ls.length}行／商品 ${map.size}種類／読み飛ばし ${skipped}行`;
  $('meta').textContent=`バッチNo：${meta.batch}　配送デポ：${meta.depot}　デポ名：${meta.depotName}　配送日：${meta.date}`;
- render();say('DATを読み込みました。商品バーコードをスキャンしてください。','info');
+ render();saveAppState();say('DATを読み込みました。パック検品モードです。','info');
 }
 function say(t,c){$('result').className='status '+c;$('result').textContent=t}
 function beep(ok){try{let C=AudioContext||webkitAudioContext,c=new C(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=ok?880:220;g.gain.value=.07;o.start();o.stop(c.currentTime+(ok?.13:.3))}catch(e){}}
 function render(){
  const arr=[...orders.values()].sort((a,b)=>{const ad=a.checked>=a.qty?1:0,bd=b.checked>=b.qty?1:0;return ad-bd||cmp(a.zone,b.zone)||cmp(a.shelf,b.shelf)||cmp(a.button,b.button)||cmp(a.code,b.code);});$('kinds').textContent=arr.length;$('total').textContent=arr.reduce((s,o)=>s+o.qty,0);$('remaining').textContent=arr.reduce((s,o)=>s+Math.max(0,o.qty-o.checked),0);
- $('list').innerHTML=arr.filter(o=>!onlyLeft||o.checked<o.qty).map(o=>{let r=Math.max(0,o.qty-o.checked),done=r===0;return `<tr class="${done?'done':''}"><td><b>${esc([o.zone,o.shelf,o.button].filter(Boolean).join(" - ")||"棚番未登録")}</b><div>${esc(o.masterName)}</div><div class="small">受注コード：${esc(o.code)}</div></td><td>${o.qty}</td><td class="remain ${done?'ok':'ng'}">${r}</td><td class="${done?'ok':'ng'}">${done?'完了':'未完了'}</td></tr>`}).join('')||'<tr><td colspan="4">商品なし</td></tr>';
+ const visible=arr.filter(o=>{const z=String(o.zone??'').normalize('NFKC').trim();const zoneOK=currentZone==='all'||z===currentZone||z===`${currentZone}ゾーン`||z===`ゾーン${currentZone}`;return zoneOK&&(!onlyLeft||o.checked<o.qty);});
+ $('zoneInfo').textContent=`表示：${currentZone==='all'?'全ゾーン':currentZone+'ゾーン'} ／ ${visible.length}商品`;
+ document.querySelectorAll('.zoneBtn').forEach(b=>b.classList.toggle('active',b.dataset.zone===currentZone));
+ $('list').innerHTML=visible.map(o=>{let r=Math.max(0,o.qty-o.checked),done=r===0;let plan=o.displayFlag==='1'?`${o.caseQty}ケース / ${o.packQty}パック`:`${o.qty}パック`;return `<tr class="${done?'done':''}"><td><b>${esc([o.zone,o.shelf,o.button].filter(Boolean).join(" - ")||"棚番未登録")}</b><div>${esc(o.masterName)}</div><div class="small">受注コード：${esc(o.code)}</div></td><td>${plan}</td><td class="remain ${done?'ok':'ng'}">${r}</td><td class="${done?'ok':'ng'}">${done?'完了':'未完了'}</td></tr>`}).join('')||'<tr><td colspan="4">商品なし</td></tr>';
  const finished=arr.length&&arr.every(o=>o.checked>=o.qty);
  $('complete').className='status '+(finished?'good':'info');$('complete').textContent=finished?'🎉 全商品・全数量の検品が完了しました！':'検品中：残り '+arr.reduce((s,o)=>s+Math.max(0,o.qty-o.checked),0)+' 個';
- try{localStorage.setItem('orderInspectionProgress',JSON.stringify([...orders].map(([k,v])=>[k,v.checked,v.qty])))}catch(e){}
+ saveAppState();
 }
 function cmp(a,b){const x=String(a??'').trim(),y=String(b??'').trim();if(!x&&!y)return 0;if(!x)return 1;if(!y)return -1;return x.localeCompare(y,'ja',{numeric:true,sensitivity:'base'});}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -73,17 +161,20 @@ function scan(raw){
  $('scan').value='';
  if(!orders.size){say('先にDATファイルを読み込んでください。','bad');return}
  const ms=barcodeIndex.get(code)||[];
- if(!ms.length){say(`NG：商品マスタにバーコードがありません\n読み取り：${rawText}`,'bad');beep(false);$('scan').focus();return}
+ if(!ms.length){const samples=MASTER.filter(m=>digits(m.code)==='3096'||padBarcode(m.barcode)==='00030960'||padBarcode(m.parent)==='00030960'||padBarcode(m.jan)==='00030960').slice(0,5).map(m=>`商品コード=${m.code} / E=${JSON.stringify(m.barcode)} / F=${JSON.stringify(m.jan)} / G=${JSON.stringify(m.parent)}`).join('\n');say(`NG：商品マスタにバーコードがありません\n読み取り=${JSON.stringify(rawText)}\n検索キー=${JSON.stringify(code)}\n検索マスタ件数=${barcodeIndex.size}\n該当候補：\n${samples||'該当商品コード・バーコードなし'}`,'bad');beep(false);$('scan').focus();return}
  const orderMatches=ms.flatMap(m=>{const k=digits(m.code).padStart(5,'0');const o=orders.get(k);return o?[o]:[]});
  const unique=[...new Map(orderMatches.map(o=>[o.code,o])).values()];
  if(!unique.length){say(`NG：このバーコードの商品は今回のオーダーにありません\n読み取り：${rawText}`,'bad');beep(false);$('scan').focus();return}
  const remaining=unique.filter(o=>o.checked<o.qty);
  if(!remaining.length){say(`NG：該当商品の予定数量はすべて検品済みです\n${unique.map(o=>o.masterName).join('／')}`,'bad');beep(false);$('scan').focus();return}
  const target=remaining[0];
- target.checked++;
+ const add=scanMode==='case'?target.caseSize:1;
+ const targetRemain=target.qty-target.checked;
+ if(add>targetRemain){say(`NG：ケース入数（${add}パック）が残数（${targetRemain}パック）を超えます。パック検品に切り替えてください。`,'bad');beep(false);$('scan').focus();return;}
+ target.checked+=add;
  render();
  const rem=unique.reduce((s,o)=>s+Math.max(0,o.qty-o.checked),0);
- say(`検品OK：${target.masterName}\n受注コード：${target.code}\n今回 +1個／この商品の残り：${Math.max(0,target.qty-target.checked)}個\n同一バーコード商品の残り合計：${rem}個`,'good');
+ say(`検品OK：${target.masterName}\n受注コード：${target.code}\n今回 +${add}パック相当（${scanMode==='case'?'ケース':'パック'}）／この商品の残り：${Math.max(0,target.qty-target.checked)}パック\n同一バーコード商品の残り合計：${rem}パック`,'good');
  beep(true);
  if([...orders.values()].every(o=>o.checked>=o.qty)){say('🎉 全商品・全数量の検品が完了しました！','good');}
  $('scan').focus();
@@ -128,7 +219,7 @@ $('loadMaster').addEventListener('click', function(){
     });
    }
    if(!parsed.length)throw new Error('商品データが見つかりません。1行目が見出し、A列が商品コードの形式か確認してください。');
-   MASTER=parsed;buildIndex();
+   MASTER=parsed;buildIndex();saveAppState();
    $('masterPicked').textContent=`読込済み：${f.name}`;
    $('masterMsg').className='status good';
    $('masterMsg').textContent=`商品マスタ読込成功：${MASTER.length.toLocaleString()}件`;
@@ -189,11 +280,15 @@ scanInput.addEventListener('keydown',e=>{
    if(v.trim()){lastScanned=v.trim();scan(v);setTimeout(()=>{lastScanned='';},80);}
  }
 });
-$('focus').onclick=()=>$('scan').focus();$('manual').onclick=()=>{if(scanTimer)clearTimeout(scanTimer);scan($('scan').value);};$('all').onclick=()=>{onlyLeft=false;render()};$('left').onclick=()=>{onlyLeft=true;render()};
+$('focus').onclick=()=>$('scan').focus();$('manual').onclick=()=>{if(scanTimer)clearTimeout(scanTimer);scan($('scan').value);};$('all').onclick=()=>{onlyLeft=false;render()};$('left').onclick=()=>{onlyLeft=true;render()};document.querySelectorAll('.zoneBtn').forEach(b=>b.addEventListener('click',()=>{currentZone=b.dataset.zone;render();}));
 $('reset').onclick=()=>{if(!confirm('このDATの検品数をすべて0に戻しますか？'))return;for(const o of orders.values())o.checked=0;render();say('検品数をリセットしました。','info')};
-$('csv').onclick=()=>{if(!orders.size){say('先にDATを読み込んでください。','bad');return}let rows=[['受注商品コード','商品名','予定数量','検品数量','残数','判定','照合バーコード']];for(const o of orders.values())rows.push([o.code,o.masterName,o.qty,o.checked,Math.max(0,o.qty-o.checked),o.checked>=o.qty?'完了':'不足',o.barcode]);let csv='\uFEFF'+rows.map(r=>r.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');let a=document.createElement('a'),u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.href=u;a.download='オーダー検品結果.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
+$('csv').onclick=()=>{if(!orders.size){say('先にDATを読み込んでください。','bad');return}let rows=[['受注商品コード','商品名','予定ケース','予定パック','ケース入数','予定パック換算','検品パック換算','残パック','判定','照合バーコード']];for(const o of orders.values())rows.push([o.code,o.masterName,o.caseQty,o.packQty,o.caseSize,o.qty,o.checked,Math.max(0,o.qty-o.checked),o.checked>=o.qty?'完了':'不足',o.barcode]);let csv='\uFEFF'+rows.map(r=>r.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');let a=document.createElement('a'),u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.href=u;a.download='オーダー検品結果.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
 try {
- $('picked').textContent='商品マスタを読み込んでからDATを選択してください。';
+ updateModeUI();
+ $('picked').textContent='保存データを確認しています...';
+ restoreAppState().then(restored=>{
+  if(!restored && !MASTER.length) $('picked').textContent='商品マスタを読み込んでからDATを選択してください。';
+ });
 } catch (err) {
  $('picked').textContent='アプリ起動エラー';
  showDatStatus('アプリ初期化エラー：' + (err && err.message ? err.message : err), 'bad');
