@@ -12,8 +12,9 @@
 <div id="masterMsg" class="status info">A列：商品コード、C列：商品名、D列：ケース入数、E列：バーコード、F列：JANコード、G列：親商品コード、H列：ゾーン、I列：棚、J列：ボタン</div>
 </section>
 <section class="card"><h2>② オーダーDATを読み込む</h2><input id="dat" type="file" accept=".dat,.DAT,.txt,application/octet-stream"><div id="picked" class="muted">ファイル未選択</div><button id="loadDat" type="button" style="width:100%;margin-top:10px">選択したDATを読み込む</button><div id="datmsg" class="status info">DATファイルを選択してください。</div><div id="meta" class="muted"></div><div class="stats" style="margin-top:10px"><div class="stat">対象商品<b id="kinds">0</b></div><div class="stat">予定合計<b id="total">0</b></div><div class="stat">残り合計<b id="remaining">0</b></div></div></section>
-<section class="card"><h2>③ バーコード検品</h2><div id="scanMode" class="status good" style="font-size:24px;text-align:center;margin-bottom:10px">現在：パック検品</div><button id="toggleMode" type="button" style="width:100%;font-size:22px;padding:18px;margin-bottom:12px">ケース検品に切替</button><div class="muted">商品に付いているバーコードをスキャンしてください。読み取り後、自動で1個検品します（Enter送信がないハンディにも対応）。G列（親商品コード）・E列（バーコード）・F列（JANコード）のいずれでも照合します。</div><label for="scan">ハンディスキャン欄</label><input id="scan" type="text" inputmode="none" autocomplete="off" placeholder="バーコードをスキャン"><div class="row" style="margin-top:8px"><button id="focus">スキャン欄に戻る</button><button id="manual" class="secondary">手入力コードを検品</button></div><div id="result" class="status">DAT読込後にスキャンしてください。</div><div class="small">全角数字も半角数字に変換して照合します。NG時は読み取り文字・検索キー・マスタ候補を表示します。</div></section>
-<section class="card"><h2>④ 必要商品の一覧</h2><div class="row"><button id="all" class="secondary">全商品</button><button id="left" class="secondary">残りあり</button></div><div class="zoneButtons" id="zoneButtons"><button type="button" class="zoneBtn active" data-zone="all">全ゾーン</button><button type="button" class="zoneBtn" data-zone="1">1ゾーン</button><button type="button" class="zoneBtn" data-zone="2">2ゾーン</button><button type="button" class="zoneBtn" data-zone="3">3ゾーン</button><button type="button" class="zoneBtn" data-zone="4">4ゾーン</button><button type="button" class="zoneBtn" data-zone="5">5ゾーン</button><button type="button" class="zoneBtn" data-zone="6">6ゾーン</button></div><div id="zoneInfo" class="muted" style="margin:8px 0">表示：全ゾーン</div><div class="tablewrap"><table><thead><tr><th>棚番・商品</th><th>予定（ケース／パック）</th><th>残りパック</th><th>状態</th></tr></thead><tbody id="list"><tr><td colspan="4">DAT未読込</td></tr></tbody></table></div></section>
+<section class="card"><h2>③ バーコード検品</h2><div id="scanMode" class="status good" style="font-size:24px;text-align:center;margin-bottom:10px">現在：パック検品</div><button id="toggleMode" type="button" style="width:100%;font-size:22px;padding:18px;margin-bottom:12px">ケース検品に切替</button><label for="scan">ハンディスキャン欄</label><input id="scan" type="text" inputmode="none" autocomplete="off" placeholder="バーコードをスキャン"><div class="row" style="margin-top:8px"><button id="focus">スキャン欄に戻る</button><button id="manual" class="secondary">手入力コードを検品</button></div><div id="result" class="status">DAT読込後にスキャンしてください。</div><div class="small">全角数字も半角数字に変換して照合します。NG時は読み取り文字・検索キー・マスタ候補を表示します。</div></section>
+<section class="card"><h2>④ 必要商品の一覧</h2><div class="row"><button id="all" class="secondary">全商品</button><button id="left" class="secondary">残りあり</button></div><div class="tablewrap"><table><thead><tr><th>棚番・商品</th><th>予定（ケース／パック）</th><th>残りパック</th><th>状態</th></tr></thead><tbody id="list"><tr><td colspan="4">DAT未読込</td></tr></tbody></table></div></section>
+<section class="card"><h2>ゾーン切替</h2><div class="zoneButtons" id="zoneButtons"><button type="button" class="zoneBtn active" data-zone="all">全ゾーン</button></div><div id="zoneInfo" class="muted" style="margin:8px 0">表示：全ゾーン</div></section>
 <section class="card"><h2>⑤ 完了・結果出力</h2><div id="complete" class="status info">検品待ち</div><div class="row" style="margin-top:8px"><button id="csv">検品結果CSV</button><button id="reset" class="danger">検品数リセット</button></div><p class="muted">商品マスタ・DAT・検品数はこのiPhone/ブラウザ内に自動保存され、次回起動時に復元されます。同じ端末・同じホーム画面アプリでご利用ください。</p></section>
 <script>
 let MASTER = [];
@@ -120,7 +121,7 @@ function parseDat(buf){
  const ls=lines(new Uint8Array(buf)), map=new Map();let skipped=0, meta={};
  for(const b of ls){
   if(b.length<77){skipped++;continue}
-  const batch=txt(b,0,7), depot=txt(b,7,11), depotName=txt(b,11,19), date=txt(b,25,33);
+  const batch=txt(b,0,8), depot=txt(b,8,11), depotName=txt(b,11,19), date=txt(b,25,33);
   const code=txt(b,44,49), name=txt(b,49,69), packText=txt(b,69,73);
   const caseText=txt(b,73,76), displayFlag=txt(b,76,77);
   if(!/^\d{5}$/.test(code)||!/^\d{4}$/.test(packText)||!/^\d{3}$/.test(caseText)||!/^[01]$/.test(displayFlag)){skipped++;continue}
@@ -137,16 +138,24 @@ function parseDat(buf){
  }
  orders=map;
  $('datmsg').className='status good';$('datmsg').textContent=`読込成功：${ls.length}行／商品 ${map.size}種類／読み飛ばし ${skipped}行`;
- $('meta').textContent=`バッチNo：${meta.batch}　配送デポ：${meta.depot}　デポ名：${meta.depotName}　配送日：${meta.date}`;
- render();saveAppState();say('DATを読み込みました。パック検品モードです。','info');
+ $('meta').textContent=`バッチ№：${meta.batch}　配送デポ：${meta.depot}　デポ名：${meta.depotName}　配送日：${meta.date}`;
+ render();saveAppState();say(`DATを読み込みました。バッチ№ ${meta.batch}です。現在パック検品モードです。`,'info');
 }
 function say(t,c){$('result').className='status '+c;$('result').textContent=t}
 function beep(ok){try{let C=AudioContext||webkitAudioContext,c=new C(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=ok?880:220;g.gain.value=.07;o.start();o.stop(c.currentTime+(ok?.13:.3))}catch(e){}}
+function normalizeZone(v){return String(v??'').normalize('NFKC').trim().replace(/\.0$/,'');}
+function zoneLabel(z){return /ゾーン/.test(z)?z:`${z}ゾーン`;}
+function renderZoneButtons(){
+ const source=MASTER.length?MASTER.map(m=>m.zone):[...orders.values()].map(o=>o.zone);
+ const zones=[...new Set(source.map(normalizeZone).filter(z=>z&&z!=='999'))].sort((a,b)=>a.localeCompare(b,'ja',{numeric:true,sensitivity:'base'}));
+ if(currentZone!=='all'&&!zones.includes(currentZone))currentZone='all';
+ $('zoneButtons').innerHTML='<button type=\"button\" class=\"zoneBtn\" data-zone=\"all\">全ゾーン</button>'+zones.map(z=>`<button type=\"button\" class=\"zoneBtn\" data-zone=\"${esc(z)}\">${esc(zoneLabel(z))}</button>`).join('');
+}
 function render(){
+ renderZoneButtons();
  const arr=[...orders.values()].sort((a,b)=>{const ad=a.checked>=a.qty?1:0,bd=b.checked>=b.qty?1:0;return ad-bd||cmp(a.zone,b.zone)||cmp(a.shelf,b.shelf)||cmp(a.button,b.button)||cmp(a.code,b.code);});$('kinds').textContent=arr.length;$('total').textContent=arr.reduce((s,o)=>s+o.qty,0);$('remaining').textContent=arr.reduce((s,o)=>s+Math.max(0,o.qty-o.checked),0);
- const visible=arr.filter(o=>{const z=String(o.zone??'').normalize('NFKC').trim();const zoneOK=currentZone==='all'||z===currentZone||z===`${currentZone}ゾーン`||z===`ゾーン${currentZone}`;return zoneOK&&(!onlyLeft||o.checked<o.qty);});
+ const visible=arr.filter(o=>{const z=normalizeZone(o.zone);const zoneOK=currentZone==='all'||z===currentZone||z===`${currentZone}ゾーン`||z===`ゾーン${currentZone}`;return zoneOK&&(!onlyLeft||o.checked<o.qty);});
  $('zoneInfo').textContent=`表示：${currentZone==='all'?'全ゾーン':currentZone+'ゾーン'} ／ ${visible.length}商品`;
- document.querySelectorAll('.zoneBtn').forEach(b=>b.classList.toggle('active',b.dataset.zone===currentZone));
  $('list').innerHTML=visible.map(o=>{let r=Math.max(0,o.qty-o.checked),done=r===0;let plan=o.displayFlag==='1'?`${o.caseQty}ケース / ${o.packQty}パック`:`${o.qty}パック`;return `<tr class="${done?'done':''}"><td><b>${esc([o.zone,o.shelf,o.button].filter(Boolean).join(" - ")||"棚番未登録")}</b><div>${esc(o.masterName)}</div><div class="small">受注コード：${esc(o.code)}</div></td><td>${plan}</td><td class="remain ${done?'ok':'ng'}">${r}</td><td class="${done?'ok':'ng'}">${done?'完了':'未完了'}</td></tr>`}).join('')||'<tr><td colspan="4">商品なし</td></tr>';
  const finished=arr.length&&arr.every(o=>o.checked>=o.qty);
  $('complete').className='status '+(finished?'good':'info');$('complete').textContent=finished?'🎉 全商品・全数量の検品が完了しました！':'検品中：残り '+arr.reduce((s,o)=>s+Math.max(0,o.qty-o.checked),0)+' 個';
@@ -280,7 +289,7 @@ scanInput.addEventListener('keydown',e=>{
    if(v.trim()){lastScanned=v.trim();scan(v);setTimeout(()=>{lastScanned='';},80);}
  }
 });
-$('focus').onclick=()=>$('scan').focus();$('manual').onclick=()=>{if(scanTimer)clearTimeout(scanTimer);scan($('scan').value);};$('all').onclick=()=>{onlyLeft=false;render()};$('left').onclick=()=>{onlyLeft=true;render()};document.querySelectorAll('.zoneBtn').forEach(b=>b.addEventListener('click',()=>{currentZone=b.dataset.zone;render();}));
+$('focus').onclick=()=>$('scan').focus();$('manual').onclick=()=>{if(scanTimer)clearTimeout(scanTimer);scan($('scan').value);};$('all').onclick=()=>{onlyLeft=false;render()};$('left').onclick=()=>{onlyLeft=true;render()};$('zoneButtons').addEventListener('click',e=>{const b=e.target.closest('.zoneBtn');if(!b)return;currentZone=b.dataset.zone;render();});
 $('reset').onclick=()=>{if(!confirm('このDATの検品数をすべて0に戻しますか？'))return;for(const o of orders.values())o.checked=0;render();say('検品数をリセットしました。','info')};
 $('csv').onclick=()=>{if(!orders.size){say('先にDATを読み込んでください。','bad');return}let rows=[['受注商品コード','商品名','予定ケース','予定パック','ケース入数','予定パック換算','検品パック換算','残パック','判定','照合バーコード']];for(const o of orders.values())rows.push([o.code,o.masterName,o.caseQty,o.packQty,o.caseSize,o.qty,o.checked,Math.max(0,o.qty-o.checked),o.checked>=o.qty?'完了':'不足',o.barcode]);let csv='\uFEFF'+rows.map(r=>r.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');let a=document.createElement('a'),u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.href=u;a.download='オーダー検品結果.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
 try {
